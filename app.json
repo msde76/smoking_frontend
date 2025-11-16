@@ -9,7 +9,12 @@
     "userInterfaceStyle": "automatic",
     "newArchEnabled": true,
     "ios": {
-      "supportsTablet": true
+      "supportsTablet": true,
+      "infoPlist": {
+        "NSMicrophoneUsageDescription": "음성 명령을 위해 마이크 사용 권한이 필요합니다.",
+        "NSSpeechRecognitionUsageDescription": "음성 인식을 위해 권한이 필요합니다.",
+        "NSLocationWhenInUseUsageDescription": "현재 위치를 지도에 표시하고 경로를 안내하기 위해 위치 정보가 필요합니다."
+      }
     },
     "android": {
       "adaptiveIcon": {
@@ -19,13 +24,27 @@
         "monochromeImage": "./assets/images/android-icon-monochrome.png"
       },
       "edgeToEdgeEnabled": true,
-      "predictiveBackGestureEnabled": false
+      "predictiveBackGestureEnabled": false,
+      "package": "com.msde76.SmokingFrontend",
+      "permissions": [
+        "android.permission.RECORD_AUDIO",
+        "android.permission.ACCESS_COARSE_LOCATION",
+        "android.permission.ACCESS_FINE_LOCATION"
+      ],
+      
+      // --- (수정) Google Maps API 키 추가 ---
+      "config": {
+        "googleMaps": {
+          "apiKey": "AIzaSyAy6Rh0l97Joh1bEAgxOrg56EuXt1ZWE_E"
+        }
+      }
     },
     "web": {
       "output": "static",
       "favicon": "./assets/images/favicon.png"
     },
     "plugins": [
+      "./withAndroidTools.js",
       "expo-router",
       [
         "expo-splash-screen",
@@ -38,11 +57,31 @@
             "backgroundColor": "#000000"
           }
         }
+      ],
+      "expo-secure-store",
+      [
+        "@react-native-voice/voice",
+        {
+          "microphonePermission": "음성 명령을 위해 마이크 사용 권한이 필요합니다.",
+          "speechRecognitionPermission": "음성 인식을 위해 권한이 필요합니다."
+        }
+      ],
+      [
+        "expo-location",
+        {
+          "locationAlwaysAndWhenInUsePermission": "현재 위치를 지도에 표시하고 경로를 안내하기 위해 위치 정보가 필요합니다."
+        }
       ]
     ],
     "experiments": {
       "typedRoutes": true,
       "reactCompiler": true
+    },
+    "extra": {
+      "router": {},
+      "eas": {
+        "projectId": "850a0e78-87eb-4daf-b8c2-987bf46c4d89"
+      }
     }
   }
 }
