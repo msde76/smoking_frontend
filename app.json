@@ -60,13 +60,6 @@
       ],
       "expo-secure-store",
       [
-        "@react-native-voice/voice",
-        {
-          "microphonePermission": "음성 명령을 위해 마이크 사용 권한이 필요합니다.",
-          "speechRecognitionPermission": "음성 인식을 위해 권한이 필요합니다."
-        }
-      ],
-      [
         "expo-location",
         {
           "locationAlwaysAndWhenInUsePermission": "현재 위치를 지도에 표시하고 경로를 안내하기 위해 위치 정보가 필요합니다."

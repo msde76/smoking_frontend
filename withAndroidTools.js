@@ -1,4 +1,4 @@
-const { withAndroidManifest, withGradleProperties } = require('@expo/config-plugins');
+const { withAndroidManifest, withGradleProperties } = require('expo/config-plugins');
 
 // 1. gradle.properties 파일을 수정하는 함수
 function setGradleProperties(config) {

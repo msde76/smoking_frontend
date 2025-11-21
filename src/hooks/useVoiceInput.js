@@ -1,60 +1,83 @@
-import Voice from '@react-native-voice/voice';
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useState } from 'react';
+import {
+  ExpoSpeechRecognitionModule,
+  useSpeechRecognitionEvent,
+} from 'expo-speech-recognition';
 
 export const useVoiceInput = () => {
   const [recognizedText, setRecognizedText] = useState('');
   const [isListening, setIsListening] = useState(false);
   const [error, setError] = useState('');
 
-  const onSpeechResults = (e) => {
-    setRecognizedText(e.value[0] || '');
+  useSpeechRecognitionEvent('start', () => {
+    setIsListening(true);
+    setError('');
+  });
+
+  useSpeechRecognitionEvent('end', () => {
     setIsListening(false);
-  };
+  });
 
-  const onSpeechError = (e) => {
-    setError(e.error?.message || 'Speech recognition error');
+  useSpeechRecognitionEvent('result', (event) => {
+    const transcript = event.results?.[0]?.transcript ?? '';
+    if (transcript) {
+      setRecognizedText(transcript);
+    }
+    if (event.isFinal) {
+      setIsListening(false);
+    }
+  });
+
+  useSpeechRecognitionEvent('error', (event) => {
+    setError(event.message || 'Speech recognition error');
     setIsListening(false);
-  };
+  });
 
-  const onSpeechStart = () => setIsListening(true);
-  const onSpeechEnd = () => setIsListening(false);
-
-  useEffect(() => {
-    Voice.onSpeechStart = onSpeechStart;
-    Voice.onSpeechEnd = onSpeechEnd;
-    Voice.onSpeechError = onSpeechError;
-    Voice.onSpeechResults = onSpeechResults;
-    return () => {
-      Voice.destroy().then(Voice.removeAllListeners);
-    };
+  const ensurePermissions = useCallback(async () => {
+    const status = await ExpoSpeechRecognitionModule.requestPermissionsAsync();
+    return status.granted;
   }, []);
 
   const startListening = useCallback(async () => {
-    console.log("### 마이크 버튼 눌림, startListening 함수 실행됨 ###");
+    console.log('### 마이크 버튼 눌림, startListening 함수 실행됨 ###');
+    setRecognizedText('');
+    setError('');
+
     try {
-      setRecognizedText('');
-      setError('');
-      await Voice.start('ko-KR'); // 한국어
+      const granted = await ensurePermissions();
+      if (!granted) {
+        setError('음성 명령을 위해 마이크 권한이 필요합니다.');
+        return;
+      }
+
+      await ExpoSpeechRecognitionModule.start({
+        lang: 'ko-KR',
+        interimResults: false,
+        continuous: false,
+      });
     } catch (e) {
-      console.error("VOICE ERROR:", e);
-      setError(e.message);
+      console.error('VOICE ERROR:', e);
+      setError(e?.message || '음성 인식을 시작할 수 없습니다.');
+      setIsListening(false);
     }
-  }, []);
+  }, [ensurePermissions]);
 
   const stopListening = useCallback(async () => {
     try {
-      await Voice.stop();
+      await ExpoSpeechRecognitionModule.stop();
     } catch (e) {
-      console.error("VOICE ERROR:", e);
-      setError(e.message);
+      console.error('VOICE ERROR:', e);
+      setError(e?.message || '음성 인식을 중지할 수 없습니다.');
+    } finally {
+      setIsListening(false);
     }
   }, []);
 
   return {
-    recognizedText, 
+    recognizedText,
     isListening,
     error,
-    startListening, 
+    startListening,
     stopListening,
   };
 };

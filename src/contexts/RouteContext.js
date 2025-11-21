@@ -1,39 +1,89 @@
-import React, { createContext, useContext, useState } from 'react';
+import React, { createContext, useContext, useEffect, useRef, useState } from 'react';
 import { useVoiceOutput } from '../hooks/useVoiceOutput';
 
 const RouteContext = createContext();
 
 export const RouteProvider = ({ children }) => {
   const [routeInfo, setRouteInfo] = useState(null); // 백엔드 응답 전체
-  const [currentInstructionIndex, setCurrentInstructionIndex] = useState(0);
-  const { speak } = useVoiceOutput();
+  const [guidanceSteps, setGuidanceSteps] = useState([]); // {id, approachText, actionText, target, triggerDistance}
+  const [currentStepIndex, setCurrentStepIndex] = useState(0);
+  const guidanceTimerRef = useRef(null);
+  const { speak, stop } = useVoiceOutput();
 
-  const loadRoute = (routeData) => {
+  const clearGuidanceTimer = () => {
+    if (guidanceTimerRef.current) {
+      clearTimeout(guidanceTimerRef.current);
+      guidanceTimerRef.current = null;
+    }
+  };
+
+  useEffect(() => {
+    return () => {
+      clearGuidanceTimer();
+    };
+  }, []);
+
+  const announce = (text) => {
+    if (!text) return;
+    stop();
+    speak(text);
+  };
+
+  const loadRoute = (routeData, steps = []) => {
     setRouteInfo(routeData);
-    setCurrentInstructionIndex(0);
-    
-    // 경로가 로드되면 첫 번째 음성 안내 시작
-    if (routeData?.voiceInstructions?.length > 0) {
-      speak(routeData.voiceInstructions[0].text);
+    setGuidanceSteps(steps);
+    setCurrentStepIndex(0);
+    clearGuidanceTimer();
+    if (steps.length) {
+      announce(steps[0].approachText || steps[0].actionText);
     }
   };
 
   const clearRoute = () => {
     setRouteInfo(null);
-    setCurrentInstructionIndex(0);
+    setGuidanceSteps([]);
+    setCurrentStepIndex(0);
+    clearGuidanceTimer();
+    stop();
   };
 
-  const playNextInstruction = () => {
-    if (!routeInfo || currentInstructionIndex >= routeInfo.voiceInstructions.length - 1) {
-      return;
+  const advanceToStep = (nextIndex) => {
+    clearGuidanceTimer();
+    if (nextIndex < guidanceSteps.length) {
+      setCurrentStepIndex(nextIndex);
+      const nextStep = guidanceSteps[nextIndex];
+      if (nextStep?.approachText) {
+        guidanceTimerRef.current = setTimeout(() => {
+          announce(nextStep.approachText);
+        }, 1200);
+      }
     }
-    const nextIndex = currentInstructionIndex + 1;
-    speak(routeInfo.voiceInstructions[nextIndex].text);
-    setCurrentInstructionIndex(nextIndex);
+  };
+
+  const announceActionForCurrentStep = () => {
+    const current = guidanceSteps[currentStepIndex];
+    if (!current) return;
+    announce(current.actionText || current.approachText);
+    const nextIndex = currentStepIndex + 1;
+    if (nextIndex < guidanceSteps.length) {
+      advanceToStep(nextIndex);
+    } else {
+      clearGuidanceTimer();
+      announce('목적지에 도착했습니다.');
+    }
   };
 
   return (
-    <RouteContext.Provider value={{ routeInfo, loadRoute, clearRoute, playNextInstruction }}>
+    <RouteContext.Provider
+      value={{
+        routeInfo,
+        loadRoute,
+        clearRoute,
+        guidanceSteps,
+        currentStepIndex,
+        announceActionForCurrentStep,
+      }}
+    >
       {children}
     </RouteContext.Provider>
   );
