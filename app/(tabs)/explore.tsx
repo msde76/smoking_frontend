@@ -1,3 +1,12 @@
+import { ThemedText } from '@/components/themed-text';
+import { ThemedView } from '@/components/themed-view';
+import { getMyReports } from '@/src/api/reportService';
+import { useDevice } from '@/src/contexts/DeviceContext';
+import { useUIScale } from '@/src/contexts/UIScaleContext';
+import { useVoiceSettings } from '@/src/contexts/VoiceSettingsContext';
+import { useVoiceOutput } from '@/src/hooks/useVoiceOutput';
+import { useFocusEffect } from '@react-navigation/native';
+import { router } from 'expo-router';
 import React, { useCallback, useEffect, useState } from 'react';
 import {
   ActivityIndicator,
@@ -9,27 +18,23 @@ import {
   TouchableOpacity,
   View,
 } from 'react-native';
-import { router } from 'expo-router';
-import { ThemedText } from '@/components/themed-text';
-import { ThemedView } from '@/components/themed-view';
-import { useDevice } from '@/src/contexts/DeviceContext';
-import { useVoiceSettings } from '@/src/contexts/VoiceSettingsContext';
-import { getMyReports } from '@/src/api/reportService';
-import { useVoiceOutput } from '@/src/hooks/useVoiceOutput';
 
 export default function TabTwoScreen() {
   const { deviceId } = useDevice();
   const { rate, pitch, updateRate, updatePitch, resetToDefaults } = useVoiceSettings();
+  const { scale, updateScale, resetToDefault, scaleFont, scaleSize, scaleSpacing, MIN_SCALE, MAX_SCALE } = useUIScale();
   const { speak } = useVoiceOutput();
-  const [reports, setReports] = useState([]);
+  const [reports, setReports] = useState<any[]>([]);
   const [isLoadingReports, setIsLoadingReports] = useState(false);
   const [tempRate, setTempRate] = useState(rate.toString());
   const [tempPitch, setTempPitch] = useState(pitch.toString());
+  const [tempScale, setTempScale] = useState(scale.toString());
 
   useEffect(() => {
     setTempRate(rate.toString());
     setTempPitch(pitch.toString());
-  }, [rate, pitch]);
+    setTempScale(scale.toString());
+  }, [rate, pitch, scale]);
 
   const handleLoadReports = useCallback(async () => {
     if (!deviceId) {
@@ -50,6 +55,15 @@ export default function TabTwoScreen() {
       setIsLoadingReports(false);
     }
   }, [deviceId, speak]);
+
+  // 탭이 포커스를 받을 때마다 신고 내역 자동 로드
+  useFocusEffect(
+    useCallback(() => {
+      if (deviceId) {
+        handleLoadReports();
+      }
+    }, [deviceId, handleLoadReports])
+  );
 
   const handleSaveRate = useCallback(() => {
     const numRate = parseFloat(tempRate);
@@ -80,7 +94,22 @@ export default function TabTwoScreen() {
     speak('음성 설정이 기본값으로 초기화되었습니다.');
   }, [resetToDefaults, speak]);
 
-  const formatDate = (dateString) => {
+  const handleSaveScale = useCallback(() => {
+    const numScale = parseFloat(tempScale);
+    if (isNaN(numScale) || numScale < MIN_SCALE || numScale > MAX_SCALE) {
+      Alert.alert('오류', `UI 크기는 ${MIN_SCALE}부터 ${MAX_SCALE} 사이의 값이어야 합니다.`);
+      return;
+    }
+    updateScale(numScale);
+    speak(`UI 크기가 ${(numScale * 100).toFixed(0)}%로 설정되었습니다.`);
+  }, [tempScale, updateScale, speak, MIN_SCALE, MAX_SCALE]);
+
+  const handleResetUIScale = useCallback(() => {
+    resetToDefault();
+    speak('UI 크기가 기본값으로 초기화되었습니다.');
+  }, [resetToDefault, speak]);
+
+  const formatDate = (dateString: string | null | undefined) => {
     if (!dateString) return '날짜 없음';
     try {
       const date = new Date(dateString);
@@ -96,83 +125,253 @@ export default function TabTwoScreen() {
     }
   };
 
+  const dynamicStyles: any = {
+    container: {
+      flex: 1,
+    },
+    content: {
+      padding: scaleSpacing(16),
+      gap: scaleSpacing(20),
+    },
+    section: {
+      backgroundColor: '#fff',
+      borderRadius: scaleSize(12),
+      padding: scaleSpacing(16),
+      elevation: 2,
+      shadowColor: '#000',
+      shadowOpacity: 0.1,
+      shadowRadius: 4,
+      shadowOffset: { width: 0, height: 2 },
+    },
+    sectionTitle: {
+      fontSize: scaleFont(20),
+      fontWeight: '600',
+      marginBottom: scaleSpacing(16),
+    },
+    labelText: {
+      fontSize: scaleFont(16),
+      fontWeight: '500',
+      color: '#111',
+    },
+    hintText: {
+      fontSize: scaleFont(12),
+      color: '#666',
+      marginTop: scaleSpacing(4),
+    },
+    input: {
+      flex: 1,
+      backgroundColor: '#F4F5F7',
+      borderRadius: scaleSize(8),
+      paddingHorizontal: scaleSpacing(12),
+      paddingVertical: scaleSpacing(10),
+      fontSize: scaleFont(16),
+      color: '#111',
+    },
+    saveButton: {
+      backgroundColor: '#007AFF',
+      borderRadius: scaleSize(8),
+      paddingHorizontal: scaleSpacing(16),
+      paddingVertical: scaleSpacing(10),
+      justifyContent: 'center',
+    },
+    saveButtonText: {
+      color: '#fff',
+      fontSize: scaleFont(14),
+      fontWeight: '600',
+    },
+    writeButton: {
+      backgroundColor: '#34C759',
+      borderRadius: scaleSize(8),
+      paddingHorizontal: scaleSpacing(14),
+      paddingVertical: scaleSpacing(8),
+    },
+    writeButtonText: {
+      color: '#fff',
+      fontSize: scaleFont(14),
+      fontWeight: '600',
+    },
+    loadButton: {
+      backgroundColor: '#007AFF',
+      borderRadius: scaleSize(8),
+      paddingHorizontal: scaleSpacing(16),
+      paddingVertical: scaleSpacing(8),
+    },
+    loadButtonText: {
+      color: '#fff',
+      fontSize: scaleFont(14),
+      fontWeight: '600',
+    },
+    testButton: {
+      flex: 1,
+      backgroundColor: '#34C759',
+      borderRadius: scaleSize(8),
+      paddingVertical: scaleSpacing(12),
+      alignItems: 'center',
+    },
+    testButtonText: {
+      color: '#fff',
+      fontSize: scaleFont(14),
+      fontWeight: '600',
+    },
+    resetButton: {
+      flex: 1,
+      backgroundColor: '#FF9500',
+      borderRadius: scaleSize(8),
+      paddingVertical: scaleSpacing(12),
+      alignItems: 'center',
+    },
+    resetButtonText: {
+      color: '#fff',
+      fontSize: scaleFont(14),
+      fontWeight: '600',
+    },
+    emptyText: {
+      fontSize: scaleFont(14),
+      color: '#666',
+      textAlign: 'center',
+    },
+    reportCard: {
+      backgroundColor: '#F9F9F9',
+      borderRadius: scaleSize(8),
+      padding: scaleSpacing(12),
+      borderLeftWidth: 3,
+      borderLeftColor: '#007AFF',
+    },
+    reportDate: {
+      fontSize: scaleFont(12),
+      color: '#666',
+      marginBottom: scaleSpacing(4),
+    },
+    reportDescription: {
+      fontSize: scaleFont(15),
+      color: '#111',
+      marginBottom: scaleSpacing(6),
+      fontWeight: '500',
+    },
+    reportAddress: {
+      fontSize: scaleFont(13),
+      color: '#666',
+      marginTop: scaleSpacing(4),
+    },
+    reportStatus: {
+      fontSize: scaleFont(12),
+      color: '#007AFF',
+      marginTop: scaleSpacing(4),
+      fontWeight: '500',
+    },
+  };
+
   return (
-    <ScrollView style={styles.container} contentContainerStyle={styles.content}>
-      <ThemedView style={styles.section}>
-        <ThemedText type="title" style={styles.sectionTitle}>
+    <ScrollView style={dynamicStyles.container} contentContainerStyle={dynamicStyles.content}>
+      <ThemedView style={dynamicStyles.section}>
+        <ThemedText type="title" style={dynamicStyles.sectionTitle}>
           음성 설정
         </ThemedText>
 
         <View style={styles.settingRow}>
           <View style={styles.settingLabel}>
-            <Text style={styles.labelText}>음성 속도</Text>
-            <Text style={styles.hintText}>현재: {rate.toFixed(2)} (0.1 ~ 2.0)</Text>
+            <Text style={dynamicStyles.labelText}>음성 속도</Text>
+            <Text style={dynamicStyles.hintText}>현재: {rate.toFixed(2)} (0.1 ~ 2.0)</Text>
           </View>
           <View style={styles.inputRow}>
             <TextInput
-              style={styles.input}
+              style={dynamicStyles.input}
               value={tempRate}
               onChangeText={setTempRate}
               keyboardType="decimal-pad"
               placeholder="0.9"
               accessibilityLabel="음성 속도 입력"
             />
-            <TouchableOpacity style={styles.saveButton} onPress={handleSaveRate}>
-              <Text style={styles.saveButtonText}>저장</Text>
+            <TouchableOpacity style={dynamicStyles.saveButton} onPress={handleSaveRate}>
+              <Text style={dynamicStyles.saveButtonText}>저장</Text>
             </TouchableOpacity>
           </View>
         </View>
 
         <View style={styles.settingRow}>
           <View style={styles.settingLabel}>
-            <Text style={styles.labelText}>음높이</Text>
-            <Text style={styles.hintText}>현재: {pitch.toFixed(2)} (0.1 ~ 2.0)</Text>
+            <Text style={dynamicStyles.labelText}>음높이</Text>
+            <Text style={dynamicStyles.hintText}>현재: {pitch.toFixed(2)} (0.1 ~ 2.0)</Text>
           </View>
           <View style={styles.inputRow}>
             <TextInput
-              style={styles.input}
+              style={dynamicStyles.input}
               value={tempPitch}
               onChangeText={setTempPitch}
               keyboardType="decimal-pad"
               placeholder="1.0"
               accessibilityLabel="음높이 입력"
             />
-            <TouchableOpacity style={styles.saveButton} onPress={handleSavePitch}>
-              <Text style={styles.saveButtonText}>저장</Text>
+            <TouchableOpacity style={dynamicStyles.saveButton} onPress={handleSavePitch}>
+              <Text style={dynamicStyles.saveButtonText}>저장</Text>
             </TouchableOpacity>
           </View>
         </View>
 
         <View style={styles.buttonRow}>
-          <TouchableOpacity style={styles.testButton} onPress={handleTestVoice}>
-            <Text style={styles.testButtonText}>음성 테스트</Text>
+          <TouchableOpacity style={dynamicStyles.testButton} onPress={handleTestVoice}>
+            <Text style={dynamicStyles.testButtonText}>음성 테스트</Text>
           </TouchableOpacity>
-          <TouchableOpacity style={styles.resetButton} onPress={handleResetSettings}>
-            <Text style={styles.resetButtonText}>기본값으로 초기화</Text>
+          <TouchableOpacity style={dynamicStyles.resetButton} onPress={handleResetSettings}>
+            <Text style={dynamicStyles.resetButtonText}>기본값으로 초기화</Text>
           </TouchableOpacity>
         </View>
       </ThemedView>
 
-      <ThemedView style={styles.section}>
+      <ThemedView style={dynamicStyles.section}>
+        <ThemedText type="title" style={dynamicStyles.sectionTitle}>
+          UI 크기 조절
+        </ThemedText>
+
+        <View style={styles.settingRow}>
+          <View style={styles.settingLabel}>
+            <Text style={dynamicStyles.labelText}>UI 크기</Text>
+            <Text style={dynamicStyles.hintText}>
+              현재: {(scale * 100).toFixed(0)}% ({MIN_SCALE} ~ {MAX_SCALE})
+            </Text>
+          </View>
+          <View style={styles.inputRow}>
+            <TextInput
+              style={dynamicStyles.input}
+              value={tempScale}
+              onChangeText={setTempScale}
+              keyboardType="decimal-pad"
+              placeholder="1.0"
+              accessibilityLabel="UI 크기 입력"
+            />
+            <TouchableOpacity style={dynamicStyles.saveButton} onPress={handleSaveScale}>
+              <Text style={dynamicStyles.saveButtonText}>저장</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+
+        <View style={styles.buttonRow}>
+          <TouchableOpacity style={dynamicStyles.resetButton} onPress={handleResetUIScale}>
+            <Text style={dynamicStyles.resetButtonText}>기본값으로 초기화</Text>
+          </TouchableOpacity>
+        </View>
+      </ThemedView>
+
+      <ThemedView style={dynamicStyles.section}>
         <View style={styles.sectionHeader}>
-          <ThemedText type="title" style={styles.sectionTitle}>
+          <ThemedText type="title" style={dynamicStyles.sectionTitle}>
             나의 신고 내역
           </ThemedText>
           <View style={styles.headerButtons}>
             <TouchableOpacity
-              style={styles.writeButton}
-              onPress={() => router.push('/report')}
+              style={dynamicStyles.writeButton}
+              onPress={() => router.push('/report' as any)}
               accessibilityLabel="신고 작성하기">
-              <Text style={styles.writeButtonText}>작성하기</Text>
+              <Text style={dynamicStyles.writeButtonText}>작성하기</Text>
             </TouchableOpacity>
             <TouchableOpacity
-              style={styles.loadButton}
+              style={dynamicStyles.loadButton}
               onPress={handleLoadReports}
               disabled={isLoadingReports || !deviceId}>
               {isLoadingReports ? (
                 <ActivityIndicator size="small" color="#007AFF" />
               ) : (
-                <Text style={styles.loadButtonText}>새로고침</Text>
+                <Text style={dynamicStyles.loadButtonText}>새로고침</Text>
               )}
             </TouchableOpacity>
           </View>
@@ -180,7 +379,7 @@ export default function TabTwoScreen() {
 
         {reports.length === 0 ? (
           <View style={styles.emptyContainer}>
-            <Text style={styles.emptyText}>
+            <Text style={dynamicStyles.emptyText}>
               {isLoadingReports
                 ? '신고 내역을 불러오는 중...'
                 : '신고 내역이 없습니다. 위의 새로고침 버튼을 눌러 확인하세요.'}
@@ -189,16 +388,16 @@ export default function TabTwoScreen() {
         ) : (
           <View style={styles.reportsList}>
             {reports.map((report, index) => (
-              <View key={report.reportId || index} style={styles.reportCard}>
-                <Text style={styles.reportDate}>{formatDate(report.createdAt || report.reportedAt)}</Text>
+              <View key={report.reportId || index} style={dynamicStyles.reportCard}>
+                <Text style={dynamicStyles.reportDate}>{formatDate(report.createdAt || report.reportedAt)}</Text>
                 {report.description && (
-                  <Text style={styles.reportDescription}>{report.description}</Text>
+                  <Text style={dynamicStyles.reportDescription}>{report.description}</Text>
                 )}
                 {report.address && (
-                  <Text style={styles.reportAddress}>📍 {report.address}</Text>
+                  <Text style={dynamicStyles.reportAddress}>📍 {report.address}</Text>
                 )}
                 {report.status && (
-                  <Text style={styles.reportStatus}>상태: {report.status}</Text>
+                  <Text style={dynamicStyles.reportStatus}>상태: {report.status}</Text>
                 )}
               </View>
             ))}
