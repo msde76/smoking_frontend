@@ -16,3 +16,11 @@ export const createReport = (reportData) => {
   return api.post('/reports', reportData);
 };
 
+/**
+ * 신고를 삭제합니다.
+ * @param {string} reportId - 신고 ID
+ */
+export const deleteReport = (reportId) => {
+  return api.delete(`/reports/${reportId}`);
+};
+

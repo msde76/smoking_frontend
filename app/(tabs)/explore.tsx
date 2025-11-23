@@ -1,6 +1,6 @@
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
-import { getMyReports } from '@/src/api/reportService';
+import { getMyReports, deleteReport } from '@/src/api/reportService';
 import CustomSlider from '@/src/components/CustomSlider';
 import { useDevice } from '@/src/contexts/DeviceContext';
 import { useUIScale } from '@/src/contexts/UIScaleContext';
@@ -130,6 +130,35 @@ export default function TabTwoScreen() {
       return dateString;
     }
   };
+
+  const handleDeleteReport = useCallback(async (reportId: string) => {
+    Alert.alert(
+      '신고 삭제',
+      '정말 이 신고를 삭제하시겠습니까?',
+      [
+        {
+          text: '취소',
+          style: 'cancel',
+        },
+        {
+          text: '삭제',
+          style: 'destructive',
+          onPress: async () => {
+            try {
+              await deleteReport(reportId);
+              speak('신고가 삭제되었습니다.');
+              // 삭제 후 목록 새로고침
+              await handleLoadReports();
+            } catch (error) {
+              console.error('Failed to delete report:', error);
+              Alert.alert('오류', '신고 삭제 중 오류가 발생했습니다.');
+              speak('신고 삭제 중 오류가 발생했습니다.');
+            }
+          },
+        },
+      ]
+    );
+  }, [speak, handleLoadReports]);
 
   const dynamicStyles: any = {
     container: {
@@ -271,6 +300,23 @@ export default function TabTwoScreen() {
       marginTop: SCREEN_HEIGHT * 0.005 * scale,
       fontWeight: '500',
     },
+    reportCardContent: {
+      flex: 1,
+    },
+    deleteButton: {
+      backgroundColor: '#FF3B30',
+      borderRadius: scaleSize(6),
+      paddingHorizontal: SCREEN_WIDTH * 0.03 * scale,
+      paddingVertical: SCREEN_HEIGHT * 0.008 * scale,
+      justifyContent: 'center',
+      alignItems: 'center',
+      marginLeft: SCREEN_WIDTH * 0.02 * scale,
+    },
+    deleteButtonText: {
+      color: '#fff',
+      fontSize: scaleFont(Math.max(11, SCREEN_WIDTH * 0.032)),
+      fontWeight: '600',
+    },
   };
 
   return (
@@ -403,16 +449,26 @@ export default function TabTwoScreen() {
           <View style={styles.reportsList}>
             {reports.map((report, index) => (
               <View key={report.reportId || index} style={dynamicStyles.reportCard}>
-                <Text style={dynamicStyles.reportDate}>{formatDate(report.createdAt || report.reportedAt)}</Text>
-                {report.description && (
-                  <Text style={dynamicStyles.reportDescription}>{report.description}</Text>
-                )}
-                {report.address && (
-                  <Text style={dynamicStyles.reportAddress}>📍 {report.address}</Text>
-                )}
-                {report.status && (
-                  <Text style={dynamicStyles.reportStatus}>상태: {report.status}</Text>
-                )}
+                <View style={{ flexDirection: 'row', alignItems: 'flex-start' }}>
+                  <View style={dynamicStyles.reportCardContent}>
+                    <Text style={dynamicStyles.reportDate}>{formatDate(report.createdAt || report.reportedAt)}</Text>
+                    {report.description && (
+                      <Text style={dynamicStyles.reportDescription}>{report.description}</Text>
+                    )}
+                    {report.address && (
+                      <Text style={dynamicStyles.reportAddress}>📍 {report.address}</Text>
+                    )}
+                    {report.status && (
+                      <Text style={dynamicStyles.reportStatus}>상태: {report.status}</Text>
+                    )}
+                  </View>
+                  <TouchableOpacity
+                    style={dynamicStyles.deleteButton}
+                    onPress={() => handleDeleteReport(report.reportId)}
+                    accessibilityLabel="신고 삭제">
+                    <Text style={dynamicStyles.deleteButtonText}>삭제</Text>
+                  </TouchableOpacity>
+                </View>
               </View>
             ))}
           </View>
