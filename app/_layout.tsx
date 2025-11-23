@@ -7,6 +7,7 @@ import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { useColorScheme } from '@/hooks/use-color-scheme';
 import { DeviceProvider } from '../src/contexts/DeviceContext';
 import { RouteProvider } from '../src/contexts/RouteContext';
+import { VoiceSettingsProvider } from '../src/contexts/VoiceSettingsContext';
 
 export const unstable_settings = {
   anchor: '(tabs)',
@@ -17,7 +18,8 @@ export default function RootLayout() {
 
   return (
     <GestureHandlerRootView style={{ flex: 1 }}>
-      <DeviceProvider>
+    <DeviceProvider>
+      <VoiceSettingsProvider>
         <RouteProvider>
           <ThemeProvider value={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>
             <Stack>
@@ -27,7 +29,8 @@ export default function RootLayout() {
             <StatusBar style="auto" />
           </ThemeProvider>
         </RouteProvider>
-      </DeviceProvider>
+      </VoiceSettingsProvider>
+    </DeviceProvider>
     </GestureHandlerRootView>
   );
 }

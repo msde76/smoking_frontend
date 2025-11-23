@@ -11,6 +11,7 @@ import {
 import { TapGestureHandler } from 'react-native-gesture-handler';
 import { parseCommand } from '../../api/nluService';
 import { findRouteByAddress } from '../../api/routeService';
+import { createReport } from '../../api/reportService';
 import { useDevice } from '../../contexts/DeviceContext';
 import { useRoute } from '../../contexts/RouteContext';
 import { useLocation } from '../../hooks/useLocation';
@@ -248,9 +249,40 @@ export default function VoiceCommandButton() {
       if (nluResult.intent === 'SEARCH_ROUTE') {
         await requestRouteForDestination(nluResult.destination);
       } else if (nluResult.intent === 'REPORT_SMOKING') {
-        setSystemMessage('민원 신고가 접수되었습니다.');
+        // 신고 생성
+        if (!location) {
+          setSystemMessage('현재 위치를 먼저 파악해야 합니다.');
+          speak('현재 위치를 먼저 파악해야 신고할 수 있습니다.');
+          return;
+        }
+        if (!deviceId) {
+          setSystemMessage('기기 ID를 로드 중입니다. 잠시 후 시도하세요.');
+          speak('기기 ID를 로드 중입니다. 잠시 후 다시 시도해주세요.');
+          return;
+        }
+
+        try {
+          setSystemMessage('흡연 구역 신고를 접수하는 중입니다...');
+          speak('흡연 구역 신고를 접수하는 중입니다.');
+
+          const reportData = {
+            deviceId: deviceId,
+            reportedLatitude: location.latitude,
+            reportedLongitude: location.longitude,
+            description: nluResult.reportContent || nluResult.description || '음성 명령으로 신고된 흡연 구역',
+          };
+
+          await createReport(reportData);
+          setSystemMessage('민원 신고가 성공적으로 접수되었습니다.');
+          speak('민원 신고가 성공적으로 접수되었습니다.');
+        } catch (reportError) {
+          console.error('Failed to create report:', reportError);
+          setSystemMessage('신고 접수 중 오류가 발생했습니다: ' + reportError.message);
+          speak('신고 접수 중 오류가 발생했습니다.');
+        }
       } else {
         setSystemMessage('명령을 이해하지 못했습니다.');
+        speak('명령을 이해하지 못했습니다.');
       }
     } catch (e) {
       setSystemMessage('오류 발생: ' + e.message);
