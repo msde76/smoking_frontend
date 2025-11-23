@@ -12,6 +12,7 @@ import React, { useCallback, useEffect, useState } from 'react';
 import {
   ActivityIndicator,
   Alert,
+  Dimensions,
   ScrollView,
   StyleSheet,
   Text,
@@ -19,6 +20,9 @@ import {
   TouchableOpacity,
   View,
 } from 'react-native';
+import { Gesture, GestureDetector } from 'react-native-gesture-handler';
+
+const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get('window');
 
 export default function TabTwoScreen() {
   const { deviceId } = useDevice();
@@ -29,6 +33,15 @@ export default function TabTwoScreen() {
   const [isLoadingReports, setIsLoadingReports] = useState(false);
   const [tempRate, setTempRate] = useState(rate.toString());
   const [tempPitch, setTempPitch] = useState(pitch.toString());
+
+  // 왼쪽으로 스와이프하면 길찾기로 이동
+  const swipeLeft = Gesture.Pan()
+    .activeOffsetX(-50)
+    .onEnd((event) => {
+      if (event.translationX < -100) {
+        router.push('/(tabs)/' as any);
+      }
+    });
 
   useEffect(() => {
     setTempRate(rate.toString());
@@ -123,13 +136,13 @@ export default function TabTwoScreen() {
       flex: 1,
     },
     content: {
-      padding: scaleSpacing(16),
-      gap: scaleSpacing(20),
+      padding: SCREEN_WIDTH * 0.04 * scale,
+      gap: SCREEN_HEIGHT * 0.025 * scale,
     },
     section: {
       backgroundColor: '#fff',
       borderRadius: scaleSize(12),
-      padding: scaleSpacing(16),
+      padding: SCREEN_WIDTH * 0.04 * scale,
       elevation: 2,
       shadowColor: '#000',
       shadowOpacity: 0.1,
@@ -137,125 +150,132 @@ export default function TabTwoScreen() {
       shadowOffset: { width: 0, height: 2 },
     },
     sectionTitle: {
-      fontSize: scaleFont(20),
+      fontSize: scaleFont(Math.max(18, SCREEN_WIDTH * 0.05)),
       fontWeight: '600',
-      marginBottom: scaleSpacing(16),
+      marginBottom: SCREEN_HEIGHT * 0.02 * scale,
     },
     labelText: {
-      fontSize: scaleFont(16),
+      fontSize: scaleFont(Math.max(14, SCREEN_WIDTH * 0.04)),
       fontWeight: '500',
       color: '#111',
     },
     hintText: {
-      fontSize: scaleFont(12),
+      fontSize: scaleFont(Math.max(10, SCREEN_WIDTH * 0.03)),
       color: '#666',
-      marginTop: scaleSpacing(4),
+      marginTop: SCREEN_HEIGHT * 0.005 * scale,
     },
     input: {
       flex: 1,
       backgroundColor: '#F4F5F7',
       borderRadius: scaleSize(8),
-      paddingHorizontal: scaleSpacing(12),
-      paddingVertical: scaleSpacing(10),
-      fontSize: scaleFont(16),
+      paddingHorizontal: SCREEN_WIDTH * 0.03 * scale,
+      paddingVertical: SCREEN_HEIGHT * 0.012 * scale,
+      fontSize: scaleFont(Math.max(14, SCREEN_WIDTH * 0.04)),
       color: '#111',
+      minHeight: SCREEN_HEIGHT * 0.05 * scale,
     },
     saveButton: {
       backgroundColor: '#007AFF',
       borderRadius: scaleSize(8),
-      paddingHorizontal: scaleSpacing(16),
-      paddingVertical: scaleSpacing(10),
+      paddingHorizontal: SCREEN_WIDTH * 0.04 * scale,
+      paddingVertical: SCREEN_HEIGHT * 0.012 * scale,
       justifyContent: 'center',
+      minHeight: SCREEN_HEIGHT * 0.05 * scale,
     },
     saveButtonText: {
       color: '#fff',
-      fontSize: scaleFont(14),
+      fontSize: scaleFont(Math.max(12, SCREEN_WIDTH * 0.035)),
       fontWeight: '600',
     },
     writeButton: {
       backgroundColor: '#34C759',
       borderRadius: scaleSize(8),
-      paddingHorizontal: scaleSpacing(14),
-      paddingVertical: scaleSpacing(8),
+      paddingHorizontal: SCREEN_WIDTH * 0.035 * scale,
+      paddingVertical: SCREEN_HEIGHT * 0.01 * scale,
+      minHeight: SCREEN_HEIGHT * 0.04 * scale,
     },
     writeButtonText: {
       color: '#fff',
-      fontSize: scaleFont(14),
+      fontSize: scaleFont(Math.max(12, SCREEN_WIDTH * 0.035)),
       fontWeight: '600',
     },
     loadButton: {
       backgroundColor: '#007AFF',
       borderRadius: scaleSize(8),
-      paddingHorizontal: scaleSpacing(16),
-      paddingVertical: scaleSpacing(8),
+      paddingHorizontal: SCREEN_WIDTH * 0.04 * scale,
+      paddingVertical: SCREEN_HEIGHT * 0.01 * scale,
+      minHeight: SCREEN_HEIGHT * 0.04 * scale,
     },
     loadButtonText: {
       color: '#fff',
-      fontSize: scaleFont(14),
+      fontSize: scaleFont(Math.max(12, SCREEN_WIDTH * 0.035)),
       fontWeight: '600',
     },
     testButton: {
       flex: 1,
       backgroundColor: '#34C759',
       borderRadius: scaleSize(8),
-      paddingVertical: scaleSpacing(12),
+      paddingVertical: SCREEN_HEIGHT * 0.015 * scale,
       alignItems: 'center',
+      minHeight: SCREEN_HEIGHT * 0.05 * scale,
     },
     testButtonText: {
       color: '#fff',
-      fontSize: scaleFont(14),
+      fontSize: scaleFont(Math.max(12, SCREEN_WIDTH * 0.035)),
       fontWeight: '600',
     },
     resetButton: {
       flex: 1,
       backgroundColor: '#FF9500',
       borderRadius: scaleSize(8),
-      paddingVertical: scaleSpacing(12),
+      paddingVertical: SCREEN_HEIGHT * 0.015 * scale,
       alignItems: 'center',
+      minHeight: SCREEN_HEIGHT * 0.05 * scale,
     },
     resetButtonText: {
       color: '#fff',
-      fontSize: scaleFont(14),
+      fontSize: scaleFont(Math.max(12, SCREEN_WIDTH * 0.035)),
       fontWeight: '600',
     },
     emptyText: {
-      fontSize: scaleFont(14),
+      fontSize: scaleFont(Math.max(12, SCREEN_WIDTH * 0.035)),
       color: '#666',
       textAlign: 'center',
     },
     reportCard: {
       backgroundColor: '#F9F9F9',
       borderRadius: scaleSize(8),
-      padding: scaleSpacing(12),
+      padding: SCREEN_WIDTH * 0.03 * scale,
       borderLeftWidth: 3,
       borderLeftColor: '#007AFF',
     },
     reportDate: {
-      fontSize: scaleFont(12),
+      fontSize: scaleFont(Math.max(10, SCREEN_WIDTH * 0.03)),
       color: '#666',
-      marginBottom: scaleSpacing(4),
+      marginBottom: SCREEN_HEIGHT * 0.005 * scale,
     },
     reportDescription: {
-      fontSize: scaleFont(15),
+      fontSize: scaleFont(Math.max(13, SCREEN_WIDTH * 0.037)),
       color: '#111',
-      marginBottom: scaleSpacing(6),
+      marginBottom: SCREEN_HEIGHT * 0.007 * scale,
       fontWeight: '500',
     },
     reportAddress: {
-      fontSize: scaleFont(13),
+      fontSize: scaleFont(Math.max(11, SCREEN_WIDTH * 0.033)),
       color: '#666',
-      marginTop: scaleSpacing(4),
+      marginTop: SCREEN_HEIGHT * 0.005 * scale,
     },
     reportStatus: {
-      fontSize: scaleFont(12),
+      fontSize: scaleFont(Math.max(10, SCREEN_WIDTH * 0.03)),
       color: '#007AFF',
-      marginTop: scaleSpacing(4),
+      marginTop: SCREEN_HEIGHT * 0.005 * scale,
       fontWeight: '500',
     },
   };
 
   return (
-    <ScrollView style={dynamicStyles.container} contentContainerStyle={dynamicStyles.content}>
+    <GestureDetector gesture={swipeLeft}>
+      <ScrollView style={dynamicStyles.container} contentContainerStyle={dynamicStyles.content}>
       <ThemedView style={dynamicStyles.section}>
         <ThemedText type="title" style={dynamicStyles.sectionTitle}>
           음성 설정
@@ -399,6 +419,7 @@ export default function TabTwoScreen() {
         )}
       </ThemedView>
     </ScrollView>
+    </GestureDetector>
   );
 }
 

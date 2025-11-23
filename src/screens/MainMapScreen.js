@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useRef, useState } from 'react';
-import { ActivityIndicator, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { ActivityIndicator, StyleSheet, Text, TouchableOpacity, View, Dimensions } from 'react-native';
 import MapView, { Marker, Polyline, PROVIDER_GOOGLE } from 'react-native-maps';
 import { getSmokingAreas } from '../api/smokingAreaService';
 import VoiceCommandButton from '../components/voice/VoiceCommandButton';
@@ -7,6 +7,8 @@ import { useRoute } from '../contexts/RouteContext';
 import { useUIScale } from '../contexts/UIScaleContext';
 import { useLocation } from '../hooks/useLocation';
 import { useVoiceOutput } from '../hooks/useVoiceOutput';
+
+const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get('window');
 
 // 서울시청 (GPS 권한 거부 시 기본 위치)
 const INITIAL_REGION = {
@@ -165,21 +167,22 @@ export default function MainMapScreen() {
         )}
       </MapView>
       <TouchableOpacity
-        style={[
-          styles.locateButton,
-          {
-            top: scaleSpacing(110),
-            right: scaleSpacing(16),
-            paddingVertical: scaleSpacing(10),
-            paddingHorizontal: scaleSpacing(14),
-            borderRadius: scaleSize(12),
-          }
-        ]}
+        style={{
+          position: 'absolute',
+          top: SCREEN_HEIGHT * 0.12 * scale,
+          right: SCREEN_WIDTH * 0.04 * scale,
+          backgroundColor: '#111827',
+          paddingVertical: SCREEN_HEIGHT * 0.012 * scale,
+          paddingHorizontal: SCREEN_WIDTH * 0.035 * scale,
+          borderRadius: scaleSize(12),
+          elevation: 4,
+          minWidth: SCREEN_WIDTH * 0.25,
+        }}
         onPress={handleLocateAndScan}
         accessibilityRole="button"
         accessibilityLabel="현재 위치로 이동하고 주변 흡연 구역 다시 탐색"
       >
-        <Text style={[styles.locateButtonText, { fontSize: scaleFont(12) }]}>내 위치 + 흡연구역</Text>
+        <Text style={{ color: '#fff', fontSize: scaleFont(Math.max(10, SCREEN_WIDTH * 0.03)), fontWeight: '600' }}>내 위치 + 흡연구역</Text>
       </TouchableOpacity>
 
       <VoiceCommandButton />

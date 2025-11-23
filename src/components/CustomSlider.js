@@ -1,5 +1,5 @@
 import React, { useRef, useState, useEffect } from 'react';
-import { View, StyleSheet, PanResponder, Animated } from 'react-native';
+import { View, StyleSheet, PanResponder, Animated, TouchableWithoutFeedback } from 'react-native';
 
 export default function CustomSlider({ 
   value, 
@@ -16,14 +16,15 @@ export default function CustomSlider({
   width = '100%',
   height = 40,
 }) {
-  const pan = useRef(new Animated.ValueXY()).current;
+  const pan = useRef(new Animated.Value(0)).current;
   const sliderWidth = useRef(0);
   const [isLayoutReady, setIsLayoutReady] = useState(false);
-  const thumbSize = 20;
+  const thumbSize = 24;
 
   const getValueFromPosition = (x) => {
     if (sliderWidth.current === 0) return value;
-    const ratio = Math.max(0, Math.min(1, x / (sliderWidth.current - thumbSize)));
+    const availableWidth = sliderWidth.current - thumbSize;
+    const ratio = Math.max(0, Math.min(1, x / availableWidth));
     const rawValue = minimumValue + ratio * (maximumValue - minimumValue);
     const steppedValue = Math.round(rawValue / step) * step;
     return Math.max(minimumValue, Math.min(maximumValue, steppedValue));
@@ -31,14 +32,15 @@ export default function CustomSlider({
 
   const getPositionFromValue = (val) => {
     if (sliderWidth.current === 0) return 0;
+    const availableWidth = sliderWidth.current - thumbSize;
     const ratio = (val - minimumValue) / (maximumValue - minimumValue);
-    return ratio * (sliderWidth.current - thumbSize);
+    return ratio * availableWidth;
   };
 
   useEffect(() => {
     if (isLayoutReady && sliderWidth.current > 0) {
       const position = getPositionFromValue(value);
-      pan.setValue({ x: position, y: 0 });
+      pan.setValue(position);
     }
   }, [value, isLayoutReady]);
 
@@ -47,26 +49,36 @@ export default function CustomSlider({
       onStartShouldSetPanResponder: () => true,
       onMoveShouldSetPanResponder: () => true,
       onPanResponderGrant: (evt) => {
-        pan.setOffset({
-          x: pan.x._value,
-          y: pan.y._value,
-        });
-        pan.setValue({ x: 0, y: 0 });
+        const touchX = evt.nativeEvent.locationX;
+        const availableWidth = sliderWidth.current - thumbSize;
+        const newX = Math.max(0, Math.min(availableWidth, touchX - thumbSize / 2));
+        pan.setValue(newX);
+        const newValue = getValueFromPosition(newX);
+        onValueChange(newValue);
       },
       onPanResponderMove: (evt, gestureState) => {
-        const currentX = pan.x._value + gestureState.dx;
-        const maxX = sliderWidth.current - thumbSize;
-        const newX = Math.max(0, Math.min(maxX, currentX));
-        pan.x.setValue(newX);
-      },
-      onPanResponderRelease: (evt, gestureState) => {
-        pan.flattenOffset();
-        const currentX = pan.x._value;
-        const newValue = getValueFromPosition(currentX);
+        const availableWidth = sliderWidth.current - thumbSize;
+        const touchX = evt.nativeEvent.locationX;
+        const newX = Math.max(0, Math.min(availableWidth, touchX - thumbSize / 2));
+        pan.setValue(newX);
+        const newValue = getValueFromPosition(newX);
         onValueChange(newValue);
+      },
+      onPanResponderRelease: () => {
+        // 값은 이미 onPanResponderMove에서 업데이트됨
       },
     })
   ).current;
+
+  const handleTrackPress = (evt) => {
+    if (sliderWidth.current === 0) return;
+    const touchX = evt.nativeEvent.locationX;
+    const availableWidth = sliderWidth.current - thumbSize;
+    const newX = Math.max(0, Math.min(availableWidth, touchX - thumbSize / 2));
+    pan.setValue(newX);
+    const newValue = getValueFromPosition(newX);
+    onValueChange(newValue);
+  };
 
   return (
     <View
@@ -77,18 +89,20 @@ export default function CustomSlider({
           sliderWidth.current = newWidth;
           setIsLayoutReady(true);
           const position = getPositionFromValue(value);
-          pan.setValue({ x: position, y: 0 });
+          pan.setValue(position);
         }
       }}
     >
-      <View style={[styles.track, { backgroundColor: maximumTrackTintColor }, trackStyle]} />
+      <TouchableWithoutFeedback onPress={handleTrackPress}>
+        <View style={[styles.track, { backgroundColor: maximumTrackTintColor }, trackStyle]} />
+      </TouchableWithoutFeedback>
       {isLayoutReady && (
         <Animated.View
           style={[
             styles.minimumTrack,
             {
               backgroundColor: minimumTrackTintColor,
-              width: pan.x.interpolate({
+              width: pan.interpolate({
                 inputRange: [0, Math.max(1, sliderWidth.current - thumbSize)],
                 outputRange: [0, Math.max(1, sliderWidth.current - thumbSize)],
                 extrapolate: 'clamp',
@@ -105,7 +119,7 @@ export default function CustomSlider({
             backgroundColor: thumbTintColor,
             width: thumbSize,
             height: thumbSize,
-            transform: [{ translateX: pan.x }],
+            transform: [{ translateX: pan }],
           },
           thumbStyle,
         ]}
@@ -131,9 +145,9 @@ const styles = StyleSheet.create({
     position: 'absolute',
   },
   thumb: {
-    width: 20,
-    height: 20,
-    borderRadius: 10,
+    width: 24,
+    height: 24,
+    borderRadius: 12,
     backgroundColor: '#007AFF',
     position: 'absolute',
     shadowColor: '#000',
@@ -141,6 +155,7 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.2,
     shadowRadius: 2,
     elevation: 3,
+    zIndex: 10,
   },
 });
 

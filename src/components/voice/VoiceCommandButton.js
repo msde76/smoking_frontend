@@ -7,7 +7,10 @@ import {
   TextInput,
   TouchableOpacity,
   View,
+  Dimensions,
 } from 'react-native';
+
+const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get('window');
 import { TapGestureHandler } from 'react-native-gesture-handler';
 import { parseCommand } from '../../api/nluService';
 import { findRouteByAddress } from '../../api/routeService';
@@ -318,110 +321,122 @@ export default function VoiceCommandButton() {
   const dynamicStyles = {
     searchContainer: {
       position: 'absolute',
-      top: scaleSpacing(40),
-      left: scaleSpacing(16),
-      right: scaleSpacing(16),
+      top: SCREEN_HEIGHT * 0.05 * scale,
+      left: SCREEN_WIDTH * 0.04 * scale,
+      right: SCREEN_WIDTH * 0.04 * scale,
       backgroundColor: 'white',
       borderRadius: scaleSize(12),
-      padding: scaleSpacing(12),
+      padding: SCREEN_WIDTH * 0.03 * scale,
       elevation: 5,
       shadowColor: '#000',
       shadowOpacity: 0.1,
       shadowRadius: 6,
       shadowOffset: { width: 0, height: 2 },
-      gap: scaleSpacing(10),
+      gap: SCREEN_WIDTH * 0.025 * scale,
     },
     searchInput: {
       backgroundColor: '#F4F5F7',
       borderRadius: scaleSize(10),
-      paddingHorizontal: scaleSpacing(16),
-      paddingVertical: scaleSpacing(12),
-      fontSize: scaleFont(16),
+      paddingHorizontal: SCREEN_WIDTH * 0.04 * scale,
+      paddingVertical: SCREEN_HEIGHT * 0.015 * scale,
+      fontSize: scaleFont(Math.max(14, SCREEN_WIDTH * 0.04)),
       color: '#111',
     },
     searchButton: {
       backgroundColor: '#007AFF',
       borderRadius: scaleSize(10),
-      paddingVertical: scaleSpacing(12),
+      paddingVertical: SCREEN_HEIGHT * 0.015 * scale,
       alignItems: 'center',
+      minHeight: SCREEN_HEIGHT * 0.05 * scale,
     },
     searchButtonDisabled: {
       backgroundColor: '#A0CFFF',
     },
     searchButtonText: {
       color: 'white',
-      fontSize: scaleFont(16),
+      fontSize: scaleFont(Math.max(14, SCREEN_WIDTH * 0.04)),
       fontWeight: '600',
     },
     infoContainer: {
       position: 'absolute',
-      bottom: scaleSpacing(30),
-      left: scaleSpacing(16),
-      right: scaleSpacing(16),
+      bottom: SCREEN_HEIGHT * 0.04 * scale,
+      left: SCREEN_WIDTH * 0.04 * scale,
+      right: SCREEN_WIDTH * 0.04 * scale,
       backgroundColor: 'white',
-      padding: scaleSpacing(16),
+      padding: SCREEN_WIDTH * 0.04 * scale,
       borderRadius: scaleSize(14),
       elevation: 5,
       shadowColor: '#000',
       shadowOpacity: 0.1,
       shadowRadius: 6,
       shadowOffset: { width: 0, height: 2 },
-      gap: scaleSpacing(10),
+      gap: SCREEN_WIDTH * 0.025 * scale,
+      maxHeight: SCREEN_HEIGHT * 0.4,
     },
     voiceButton: {
       marginLeft: 'auto',
       backgroundColor: '#0ea5e9',
-      paddingHorizontal: scaleSpacing(12),
-      paddingVertical: scaleSpacing(6),
+      paddingHorizontal: SCREEN_WIDTH * 0.03 * scale,
+      paddingVertical: SCREEN_HEIGHT * 0.007 * scale,
       borderRadius: scaleSize(10),
+      minHeight: SCREEN_HEIGHT * 0.04 * scale,
+      justifyContent: 'center',
     },
     voiceButtonText: {
       color: '#fff',
       fontWeight: '600',
-      fontSize: scaleFont(13),
+      fontSize: scaleFont(Math.max(11, SCREEN_WIDTH * 0.033)),
     },
     listeningBadge: {
       backgroundColor: '#FF3B30',
       color: 'white',
-      paddingHorizontal: scaleSpacing(10),
-      paddingVertical: scaleSpacing(4),
+      paddingHorizontal: SCREEN_WIDTH * 0.025 * scale,
+      paddingVertical: SCREEN_HEIGHT * 0.005 * scale,
       borderRadius: scaleSize(12),
-      fontSize: scaleFont(12),
-      marginRight: scaleSpacing(10),
+      fontSize: scaleFont(Math.max(10, SCREEN_WIDTH * 0.03)),
+      marginRight: SCREEN_WIDTH * 0.025 * scale,
     },
     currentGuidance: {
-      fontSize: scaleFont(16),
+      fontSize: scaleFont(Math.max(14, SCREEN_WIDTH * 0.04)),
       fontWeight: '600',
       color: '#0f172a',
     },
     systemMessage: {
-      fontSize: scaleFont(15),
+      fontSize: scaleFont(Math.max(13, SCREEN_WIDTH * 0.037)),
       color: '#374151',
-      lineHeight: scaleFont(20),
+      lineHeight: scaleFont(Math.max(18, SCREEN_WIDTH * 0.05)),
     },
     errorText: {
       color: 'red',
-      fontSize: scaleFont(12),
+      fontSize: scaleFont(Math.max(10, SCREEN_WIDTH * 0.03)),
     },
     instructionsList: {
-      maxHeight: scaleSize(180),
+      maxHeight: SCREEN_HEIGHT * 0.22 * scale,
     },
     instructionsContent: {
-      gap: scaleSpacing(8),
+      gap: SCREEN_HEIGHT * 0.01 * scale,
     },
     instructionText: {
-      fontSize: scaleFont(14),
+      fontSize: scaleFont(Math.max(12, SCREEN_WIDTH * 0.035)),
       color: '#333',
-      lineHeight: scaleFont(20),
+      lineHeight: scaleFont(Math.max(18, SCREEN_WIDTH * 0.05)),
     },
     instructionTextActive: {
       color: '#0ea5e9',
       fontWeight: '600',
     },
     instructionPlaceholder: {
-      fontSize: scaleFont(13),
+      fontSize: scaleFont(Math.max(11, SCREEN_WIDTH * 0.033)),
       color: '#666',
-      lineHeight: scaleFont(20),
+      lineHeight: scaleFont(Math.max(18, SCREEN_WIDTH * 0.05)),
+    },
+    statusRow: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      minHeight: SCREEN_HEIGHT * 0.025 * scale,
+    },
+    statusSpinner: {
+      marginLeft: 'auto',
     },
   };
 
@@ -461,9 +476,9 @@ export default function VoiceCommandButton() {
         onActivated={handleVoiceTrigger}
       >
         <View style={dynamicStyles.infoContainer} accessible accessibilityHint="이 안내판을 두 번 탭하거나 아래 버튼을 누르면 음성 명령을 시작합니다.">
-          <View style={styles.statusRow}>
+          <View style={dynamicStyles.statusRow}>
             {isListening && <Text style={dynamicStyles.listeningBadge}>듣는 중</Text>}
-            {isLoading && <ActivityIndicator size="small" color="#007AFF" style={styles.statusSpinner} />}
+            {isLoading && <ActivityIndicator size="small" color="#007AFF" style={dynamicStyles.statusSpinner} />}
             <TouchableOpacity
               style={dynamicStyles.voiceButton}
               onPress={handleVoiceTrigger}
