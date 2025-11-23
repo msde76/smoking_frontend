@@ -21,7 +21,7 @@ const INITIAL_REGION = {
 export default function MainMapScreen() {
   const { location, errorMsg, permissionGranted } = useLocation();
   const { routeInfo, guidanceSteps, currentStepIndex, announceActionForCurrentStep } = useRoute();
-  const { scaleFont, scaleSize, scaleSpacing } = useUIScale();
+  const { scale, scaleFont, scaleSize, scaleSpacing } = useUIScale();
   const [smokingAreas, setSmokingAreas] = useState([]);
   const mapRef = useRef(null); 
   const { speak, stop } = useVoiceOutput();

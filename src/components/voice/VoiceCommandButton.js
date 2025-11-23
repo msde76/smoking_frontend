@@ -27,7 +27,7 @@ export default function VoiceCommandButton() {
   const { deviceId } = useDevice();
   const { location } = useLocation();
   const { loadRoute, clearRoute, guidanceSteps, currentStepIndex } = useRoute();
-  const { scaleFont, scaleSize, scaleSpacing } = useUIScale();
+  const { scale, scaleFont, scaleSize, scaleSpacing } = useUIScale();
   const { speak, stop } = useVoiceOutput();
 
   const [systemMessage, setSystemMessage] = useState('목적지를 검색하거나 하단 안내판을 두 번 탭해 말씀해주세요.');
