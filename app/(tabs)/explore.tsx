@@ -1,11 +1,11 @@
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
 import { getMyReports } from '@/src/api/reportService';
+import CustomSlider from '@/src/components/CustomSlider';
 import { useDevice } from '@/src/contexts/DeviceContext';
 import { useUIScale } from '@/src/contexts/UIScaleContext';
 import { useVoiceSettings } from '@/src/contexts/VoiceSettingsContext';
 import { useVoiceOutput } from '@/src/hooks/useVoiceOutput';
-import Slider from '@react-native-community/slider';
 import { useFocusEffect } from '@react-navigation/native';
 import { router } from 'expo-router';
 import React, { useCallback, useEffect, useState } from 'react';
@@ -324,8 +324,9 @@ export default function TabTwoScreen() {
             </Text>
           </View>
           <View style={{ marginVertical: scaleSpacing(16) }}>
-            <Slider
-              style={{ width: '100%', height: scaleSize(40) }}
+            <CustomSlider
+              width="100%"
+              height={scaleSize(40)}
               minimumValue={MIN_SCALE}
               maximumValue={MAX_SCALE}
               value={scale}
@@ -334,7 +335,6 @@ export default function TabTwoScreen() {
               minimumTrackTintColor="#007AFF"
               maximumTrackTintColor="#E5E5E5"
               thumbTintColor="#007AFF"
-              accessibilityLabel="UI 크기 조절 슬라이더"
             />
           </View>
         </View>
