@@ -5,6 +5,7 @@ import { useDevice } from '@/src/contexts/DeviceContext';
 import { useUIScale } from '@/src/contexts/UIScaleContext';
 import { useVoiceSettings } from '@/src/contexts/VoiceSettingsContext';
 import { useVoiceOutput } from '@/src/hooks/useVoiceOutput';
+import Slider from '@react-native-community/slider';
 import { useFocusEffect } from '@react-navigation/native';
 import { router } from 'expo-router';
 import React, { useCallback, useEffect, useState } from 'react';
@@ -28,13 +29,11 @@ export default function TabTwoScreen() {
   const [isLoadingReports, setIsLoadingReports] = useState(false);
   const [tempRate, setTempRate] = useState(rate.toString());
   const [tempPitch, setTempPitch] = useState(pitch.toString());
-  const [tempScale, setTempScale] = useState(scale.toString());
 
   useEffect(() => {
     setTempRate(rate.toString());
     setTempPitch(pitch.toString());
-    setTempScale(scale.toString());
-  }, [rate, pitch, scale]);
+  }, [rate, pitch]);
 
   const handleLoadReports = useCallback(async () => {
     if (!deviceId) {
@@ -94,15 +93,9 @@ export default function TabTwoScreen() {
     speak('음성 설정이 기본값으로 초기화되었습니다.');
   }, [resetToDefaults, speak]);
 
-  const handleSaveScale = useCallback(() => {
-    const numScale = parseFloat(tempScale);
-    if (isNaN(numScale) || numScale < MIN_SCALE || numScale > MAX_SCALE) {
-      Alert.alert('오류', `UI 크기는 ${MIN_SCALE}부터 ${MAX_SCALE} 사이의 값이어야 합니다.`);
-      return;
-    }
-    updateScale(numScale);
-    speak(`UI 크기가 ${(numScale * 100).toFixed(0)}%로 설정되었습니다.`);
-  }, [tempScale, updateScale, speak, MIN_SCALE, MAX_SCALE]);
+  const handleScaleChange = useCallback((value: any) => {
+    updateScale(value);
+  }, [updateScale]);
 
   const handleResetUIScale = useCallback(() => {
     resetToDefault();
@@ -327,21 +320,22 @@ export default function TabTwoScreen() {
           <View style={styles.settingLabel}>
             <Text style={dynamicStyles.labelText}>UI 크기</Text>
             <Text style={dynamicStyles.hintText}>
-              현재: {(scale * 100).toFixed(0)}% ({MIN_SCALE} ~ {MAX_SCALE})
+              현재: {(scale * 100).toFixed(0)}% (최소: {(MIN_SCALE * 100).toFixed(0)}%, 최대: {(MAX_SCALE * 100).toFixed(0)}%)
             </Text>
           </View>
-          <View style={styles.inputRow}>
-            <TextInput
-              style={dynamicStyles.input}
-              value={tempScale}
-              onChangeText={setTempScale}
-              keyboardType="decimal-pad"
-              placeholder="1.0"
-              accessibilityLabel="UI 크기 입력"
+          <View style={{ marginVertical: scaleSpacing(16) }}>
+            <Slider
+              style={{ width: '100%', height: scaleSize(40) }}
+              minimumValue={MIN_SCALE}
+              maximumValue={MAX_SCALE}
+              value={scale}
+              onValueChange={handleScaleChange}
+              step={0.1}
+              minimumTrackTintColor="#007AFF"
+              maximumTrackTintColor="#E5E5E5"
+              thumbTintColor="#007AFF"
+              accessibilityLabel="UI 크기 조절 슬라이더"
             />
-            <TouchableOpacity style={dynamicStyles.saveButton} onPress={handleSaveScale}>
-              <Text style={dynamicStyles.saveButtonText}>저장</Text>
-            </TouchableOpacity>
           </View>
         </View>
 

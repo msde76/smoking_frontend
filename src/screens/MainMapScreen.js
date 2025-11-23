@@ -4,6 +4,7 @@ import MapView, { Marker, Polyline, PROVIDER_GOOGLE } from 'react-native-maps';
 import { getSmokingAreas } from '../api/smokingAreaService';
 import VoiceCommandButton from '../components/voice/VoiceCommandButton';
 import { useRoute } from '../contexts/RouteContext';
+import { useUIScale } from '../contexts/UIScaleContext';
 import { useLocation } from '../hooks/useLocation';
 import { useVoiceOutput } from '../hooks/useVoiceOutput';
 
@@ -18,6 +19,7 @@ const INITIAL_REGION = {
 export default function MainMapScreen() {
   const { location, errorMsg, permissionGranted } = useLocation();
   const { routeInfo, guidanceSteps, currentStepIndex, announceActionForCurrentStep } = useRoute();
+  const { scaleFont, scaleSize, scaleSpacing } = useUIScale();
   const [smokingAreas, setSmokingAreas] = useState([]);
   const mapRef = useRef(null); 
   const { speak, stop } = useVoiceOutput();
@@ -163,12 +165,21 @@ export default function MainMapScreen() {
         )}
       </MapView>
       <TouchableOpacity
-        style={styles.locateButton}
+        style={[
+          styles.locateButton,
+          {
+            top: scaleSpacing(110),
+            right: scaleSpacing(16),
+            paddingVertical: scaleSpacing(10),
+            paddingHorizontal: scaleSpacing(14),
+            borderRadius: scaleSize(12),
+          }
+        ]}
         onPress={handleLocateAndScan}
         accessibilityRole="button"
         accessibilityLabel="현재 위치로 이동하고 주변 흡연 구역 다시 탐색"
       >
-        <Text style={styles.locateButtonText}>내 위치 + 흡연구역</Text>
+        <Text style={[styles.locateButtonText, { fontSize: scaleFont(12) }]}>내 위치 + 흡연구역</Text>
       </TouchableOpacity>
 
       <VoiceCommandButton />

@@ -14,6 +14,7 @@ import { findRouteByAddress } from '../../api/routeService';
 import { createReport } from '../../api/reportService';
 import { useDevice } from '../../contexts/DeviceContext';
 import { useRoute } from '../../contexts/RouteContext';
+import { useUIScale } from '../../contexts/UIScaleContext';
 import { useLocation } from '../../hooks/useLocation';
 import { useVoiceInput } from '../../hooks/useVoiceInput';
 import { useVoiceOutput } from '../../hooks/useVoiceOutput';
@@ -23,6 +24,7 @@ export default function VoiceCommandButton() {
   const { deviceId } = useDevice();
   const { location } = useLocation();
   const { loadRoute, clearRoute, guidanceSteps, currentStepIndex } = useRoute();
+  const { scaleFont, scaleSize, scaleSpacing } = useUIScale();
   const { speak, stop } = useVoiceOutput();
 
   const [systemMessage, setSystemMessage] = useState('목적지를 검색하거나 하단 안내판을 두 번 탭해 말씀해주세요.');
@@ -313,12 +315,122 @@ export default function VoiceCommandButton() {
   const currentGuidanceText =
     guidanceSteps[currentStepIndex]?.approachText || '경로가 준비되면 현재 안내가 여기에 표시됩니다.';
 
+  const dynamicStyles = {
+    searchContainer: {
+      position: 'absolute',
+      top: scaleSpacing(40),
+      left: scaleSpacing(16),
+      right: scaleSpacing(16),
+      backgroundColor: 'white',
+      borderRadius: scaleSize(12),
+      padding: scaleSpacing(12),
+      elevation: 5,
+      shadowColor: '#000',
+      shadowOpacity: 0.1,
+      shadowRadius: 6,
+      shadowOffset: { width: 0, height: 2 },
+      gap: scaleSpacing(10),
+    },
+    searchInput: {
+      backgroundColor: '#F4F5F7',
+      borderRadius: scaleSize(10),
+      paddingHorizontal: scaleSpacing(16),
+      paddingVertical: scaleSpacing(12),
+      fontSize: scaleFont(16),
+      color: '#111',
+    },
+    searchButton: {
+      backgroundColor: '#007AFF',
+      borderRadius: scaleSize(10),
+      paddingVertical: scaleSpacing(12),
+      alignItems: 'center',
+    },
+    searchButtonDisabled: {
+      backgroundColor: '#A0CFFF',
+    },
+    searchButtonText: {
+      color: 'white',
+      fontSize: scaleFont(16),
+      fontWeight: '600',
+    },
+    infoContainer: {
+      position: 'absolute',
+      bottom: scaleSpacing(30),
+      left: scaleSpacing(16),
+      right: scaleSpacing(16),
+      backgroundColor: 'white',
+      padding: scaleSpacing(16),
+      borderRadius: scaleSize(14),
+      elevation: 5,
+      shadowColor: '#000',
+      shadowOpacity: 0.1,
+      shadowRadius: 6,
+      shadowOffset: { width: 0, height: 2 },
+      gap: scaleSpacing(10),
+    },
+    voiceButton: {
+      marginLeft: 'auto',
+      backgroundColor: '#0ea5e9',
+      paddingHorizontal: scaleSpacing(12),
+      paddingVertical: scaleSpacing(6),
+      borderRadius: scaleSize(10),
+    },
+    voiceButtonText: {
+      color: '#fff',
+      fontWeight: '600',
+      fontSize: scaleFont(13),
+    },
+    listeningBadge: {
+      backgroundColor: '#FF3B30',
+      color: 'white',
+      paddingHorizontal: scaleSpacing(10),
+      paddingVertical: scaleSpacing(4),
+      borderRadius: scaleSize(12),
+      fontSize: scaleFont(12),
+      marginRight: scaleSpacing(10),
+    },
+    currentGuidance: {
+      fontSize: scaleFont(16),
+      fontWeight: '600',
+      color: '#0f172a',
+    },
+    systemMessage: {
+      fontSize: scaleFont(15),
+      color: '#374151',
+      lineHeight: scaleFont(20),
+    },
+    errorText: {
+      color: 'red',
+      fontSize: scaleFont(12),
+    },
+    instructionsList: {
+      maxHeight: scaleSize(180),
+    },
+    instructionsContent: {
+      gap: scaleSpacing(8),
+    },
+    instructionText: {
+      fontSize: scaleFont(14),
+      color: '#333',
+      lineHeight: scaleFont(20),
+    },
+    instructionTextActive: {
+      color: '#0ea5e9',
+      fontWeight: '600',
+    },
+    instructionPlaceholder: {
+      fontSize: scaleFont(13),
+      color: '#666',
+      lineHeight: scaleFont(20),
+    },
+  };
+
   return (
     <>
-      <View style={styles.searchContainer}>
+      <View style={dynamicStyles.searchContainer}>
         <TextInput
           ref={inputRef}
-          style={styles.searchInput}
+          style={dynamicStyles.searchInput}
           placeholder="가고 싶은 목적지를 입력하세요 (예: 강남역)"
           placeholderTextColor="#666"
           value={manualDestination}
@@ -330,15 +442,15 @@ export default function VoiceCommandButton() {
         />
         <TouchableOpacity
           style={[
-            styles.searchButton,
-            (isLoading || !manualDestination.trim()) && styles.searchButtonDisabled,
+            dynamicStyles.searchButton,
+            (isLoading || !manualDestination.trim()) && dynamicStyles.searchButtonDisabled,
           ]}
           onPress={handleManualSearch}
           disabled={isLoading || !manualDestination.trim()}
           accessibilityRole="button"
           accessibilityLabel="입력한 목적지로 경로 안내 시작"
         >
-          <Text style={styles.searchButtonText}>{isLoading ? '탐색 중...' : '안내 시작'}</Text>
+          <Text style={dynamicStyles.searchButtonText}>{isLoading ? '탐색 중...' : '안내 시작'}</Text>
         </TouchableOpacity>
       </View>
 
@@ -348,38 +460,38 @@ export default function VoiceCommandButton() {
         maxDurationMs={250}
         onActivated={handleVoiceTrigger}
       >
-        <View style={styles.infoContainer} accessible accessibilityHint="이 안내판을 두 번 탭하거나 아래 버튼을 누르면 음성 명령을 시작합니다.">
+        <View style={dynamicStyles.infoContainer} accessible accessibilityHint="이 안내판을 두 번 탭하거나 아래 버튼을 누르면 음성 명령을 시작합니다.">
           <View style={styles.statusRow}>
-            {isListening && <Text style={styles.listeningBadge}>듣는 중</Text>}
+            {isListening && <Text style={dynamicStyles.listeningBadge}>듣는 중</Text>}
             {isLoading && <ActivityIndicator size="small" color="#007AFF" style={styles.statusSpinner} />}
             <TouchableOpacity
-              style={styles.voiceButton}
+              style={dynamicStyles.voiceButton}
               onPress={handleVoiceTrigger}
               disabled={isLoading}
               accessibilityRole="button"
               accessibilityLabel="음성 명령 시작"
             >
-              <Text style={styles.voiceButtonText}>{isListening ? '듣는 중' : '🎙️ 음성 명령'}</Text>
+              <Text style={dynamicStyles.voiceButtonText}>{isListening ? '듣는 중' : '🎙️ 음성 명령'}</Text>
             </TouchableOpacity>
           </View>
-          <Text style={styles.currentGuidance}>{currentGuidanceText}</Text>
-          <Text style={styles.systemMessage}>{systemMessage}</Text>
-          {error && <Text style={styles.errorText}>{error}</Text>}
-          <ScrollView style={styles.instructionsList} contentContainerStyle={styles.instructionsContent}>
+          <Text style={dynamicStyles.currentGuidance}>{currentGuidanceText}</Text>
+          <Text style={dynamicStyles.systemMessage}>{systemMessage}</Text>
+          {error && <Text style={dynamicStyles.errorText}>{error}</Text>}
+          <ScrollView style={dynamicStyles.instructionsList} contentContainerStyle={dynamicStyles.instructionsContent}>
             {guidanceSteps.length > 0 ? (
               guidanceSteps.map((step, index) => (
                 <Text
                   key={step.id || `${index}-guidance`}
                   style={[
-                    styles.instructionText,
-                    index === currentStepIndex && styles.instructionTextActive,
+                    dynamicStyles.instructionText,
+                    index === currentStepIndex && dynamicStyles.instructionTextActive,
                   ]}
                 >
                   {`${index + 1}. ${step.approachText}`}
                 </Text>
               ))
             ) : (
-              <Text style={styles.instructionPlaceholder}>
+              <Text style={dynamicStyles.instructionPlaceholder}>
                 목적지를 입력하거나 하단 안내판을 두 번 탭해 음성 명령을 시작하세요.
                 경로가 계산되면 현재 안내와 다음 단계들이 여기에 표시되고 음성으로도 안내해 드립니다.
               </Text>
