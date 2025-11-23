@@ -22,7 +22,7 @@ export default function VoiceCommandButton() {
   const { recognizedText, isListening, error, startListening } = useVoiceInput();
   const { deviceId } = useDevice();
   const { location } = useLocation();
-  const { loadRoute, guidanceSteps, currentStepIndex } = useRoute();
+  const { loadRoute, clearRoute, guidanceSteps, currentStepIndex } = useRoute();
   const { speak, stop } = useVoiceOutput();
 
   const [systemMessage, setSystemMessage] = useState('목적지를 검색하거나 하단 안내판을 두 번 탭해 말씀해주세요.');
@@ -304,9 +304,11 @@ export default function VoiceCommandButton() {
     if (isLoading || isListening) {
       return;
     }
+    // 이전 경로를 먼저 지우고 음성 인식 시작
+    clearRoute();
     setSystemMessage('음성 명령을 시작합니다...');
     startListening();
-  }, [isListening, isLoading, startListening]);
+  }, [isListening, isLoading, startListening, clearRoute]);
 
   const currentGuidanceText =
     guidanceSteps[currentStepIndex]?.approachText || '경로가 준비되면 현재 안내가 여기에 표시됩니다.';
