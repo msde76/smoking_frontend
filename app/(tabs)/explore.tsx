@@ -33,6 +33,7 @@ export default function TabTwoScreen() {
   const [isLoadingReports, setIsLoadingReports] = useState(false);
   const [tempRate, setTempRate] = useState(rate.toString());
   const [tempPitch, setTempPitch] = useState(pitch.toString());
+  const [tempScale, setTempScale] = useState(scale);
 
   // 왼쪽으로 스와이프하면 길찾기로 이동
   const swipeLeft = Gesture.Pan()
@@ -48,31 +49,36 @@ export default function TabTwoScreen() {
     setTempPitch(pitch.toString());
   }, [rate, pitch]);
 
-  const handleLoadReports = useCallback(async () => {
-    if (!deviceId) {
-      Alert.alert('오류', '기기 ID를 불러올 수 없습니다.');
-      return;
-    }
+  const handleLoadReports = useCallback(
+    async (shouldAnnounce: boolean = true) => {
+      if (!deviceId) {
+        Alert.alert('오류', '기기 ID를 불러올 수 없습니다.');
+        return;
+      }
 
-    setIsLoadingReports(true);
-    try {
-      const response = await getMyReports(deviceId);
-      setReports(response.data.result || []);
-      speak(`신고 내역 ${response.data.result?.length || 0}건을 불러왔습니다.`);
-    } catch (error) {
-      console.error('Failed to load reports:', error);
-      Alert.alert('오류', '신고 내역을 불러오는 중 오류가 발생했습니다.');
-      speak('신고 내역을 불러오는 중 오류가 발생했습니다.');
-    } finally {
-      setIsLoadingReports(false);
-    }
-  }, [deviceId, speak]);
+      setIsLoadingReports(true);
+      try {
+        const response = await getMyReports(deviceId);
+        setReports(response.data.result || []);
+        if (shouldAnnounce) {
+          speak(`신고 내역 ${response.data.result?.length || 0}건을 불러왔습니다.`);
+        }
+      } catch (error) {
+        console.error('Failed to load reports:', error);
+        Alert.alert('오류', '신고 내역을 불러오는 중 오류가 발생했습니다.');
+        speak('신고 내역을 불러오는 중 오류가 발생했습니다.');
+      } finally {
+        setIsLoadingReports(false);
+      }
+    },
+    [deviceId, speak]
+  );
 
   // 탭이 포커스를 받을 때마다 신고 내역 자동 로드
   useFocusEffect(
     useCallback(() => {
       if (deviceId) {
-        handleLoadReports();
+        handleLoadReports(false);
       }
     }, [deviceId, handleLoadReports])
   );
@@ -106,12 +112,25 @@ export default function TabTwoScreen() {
     speak('음성 설정이 기본값으로 초기화되었습니다.');
   }, [resetToDefaults, speak]);
 
-  const handleScaleChange = useCallback((value: any) => {
-    updateScale(value);
-  }, [updateScale]);
+  useEffect(() => {
+    setTempScale(scale);
+  }, [scale]);
+
+  const handleScalePreview = useCallback((value: number) => {
+    setTempScale(value);
+  }, []);
+
+  const handleScaleCommit = useCallback(
+    (value: number) => {
+      setTempScale(value);
+      updateScale(value);
+    },
+    [updateScale]
+  );
 
   const handleResetUIScale = useCallback(() => {
     resetToDefault();
+    setTempScale(1.0);
     speak('UI 크기가 기본값으로 초기화되었습니다.');
   }, [resetToDefault, speak]);
 
@@ -148,7 +167,7 @@ export default function TabTwoScreen() {
               await deleteReport(reportId);
               speak('신고가 삭제되었습니다.');
               // 삭제 후 목록 새로고침
-              await handleLoadReports();
+              await handleLoadReports(false);
             } catch (error) {
               console.error('Failed to delete report:', error);
               Alert.alert('오류', '신고 삭제 중 오류가 발생했습니다.');
@@ -386,7 +405,7 @@ export default function TabTwoScreen() {
           <View style={styles.settingLabel}>
             <Text style={dynamicStyles.labelText}>UI 크기</Text>
             <Text style={dynamicStyles.hintText}>
-              현재: {(scale * 100).toFixed(0)}% (최소: {(MIN_SCALE * 100).toFixed(0)}%, 최대: {(MAX_SCALE * 100).toFixed(0)}%)
+              현재: {(tempScale * 100).toFixed(0)}% (최소: {(MIN_SCALE * 100).toFixed(0)}%, 최대: {(MAX_SCALE * 100).toFixed(0)}%)
             </Text>
           </View>
           <View style={{ marginVertical: scaleSpacing(16) }}>
@@ -395,8 +414,9 @@ export default function TabTwoScreen() {
               height={scaleSize(40)}
               minimumValue={MIN_SCALE}
               maximumValue={MAX_SCALE}
-              value={scale}
-              onValueChange={handleScaleChange}
+              value={tempScale}
+              onValueChange={handleScalePreview}
+              onSlidingComplete={handleScaleCommit}
               step={0.1}
               minimumTrackTintColor="#007AFF"
               maximumTrackTintColor="#E5E5E5"
@@ -426,7 +446,7 @@ export default function TabTwoScreen() {
             </TouchableOpacity>
             <TouchableOpacity
               style={dynamicStyles.loadButton}
-              onPress={handleLoadReports}
+              onPress={() => handleLoadReports(true)}
               disabled={isLoadingReports || !deviceId}>
               {isLoadingReports ? (
                 <ActivityIndicator size="small" color="#007AFF" />
