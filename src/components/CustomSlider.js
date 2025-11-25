@@ -7,6 +7,7 @@ export default function CustomSlider({
   minimumValue = 0, 
   maximumValue = 1, 
   step = 0.1,
+  onSlidingComplete = () => {},
   style = {},
   trackStyle = {},
   thumbStyle = {},
@@ -65,7 +66,9 @@ export default function CustomSlider({
         onValueChange(newValue);
       },
       onPanResponderRelease: () => {
-        // 값은 이미 onPanResponderMove에서 업데이트됨
+        const currentX = pan.__getValue();
+        const newValue = getValueFromPosition(currentX);
+        onSlidingComplete(newValue);
       },
     })
   ).current;
@@ -78,6 +81,7 @@ export default function CustomSlider({
     pan.setValue(newX);
     const newValue = getValueFromPosition(newX);
     onValueChange(newValue);
+    onSlidingComplete(newValue);
   };
 
   return (
