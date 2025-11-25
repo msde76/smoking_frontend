@@ -27,7 +27,7 @@ const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get('window');
 export default function TabTwoScreen() {
   const { deviceId } = useDevice();
   const { rate, pitch, updateRate, updatePitch, resetToDefaults } = useVoiceSettings();
-  const { scale, updateScale, resetToDefault, scaleFont, scaleSize, scaleSpacing, MIN_SCALE, MAX_SCALE } = useUIScale();
+  const { scale, updateScale, resetToDefault, MIN_SCALE, MAX_SCALE } = useUIScale();
   const { speak } = useVoiceOutput();
   const [reports, setReports] = useState<any[]>([]);
   const [isLoadingReports, setIsLoadingReports] = useState(false);
@@ -179,18 +179,23 @@ export default function TabTwoScreen() {
     );
   }, [speak, handleLoadReports]);
 
+  const safeScale = Math.min(Math.max(scale, MIN_SCALE), 1.35);
+  const applySpacing = (value: number) => Math.round(value * safeScale);
+  const applyFont = (value: number) => Math.round(value * safeScale);
+  const applyRadius = (value: number) => Math.round(value * safeScale);
+
   const dynamicStyles: any = {
     container: {
       flex: 1,
     },
     content: {
-      padding: SCREEN_WIDTH * 0.04 * scale,
-      gap: SCREEN_HEIGHT * 0.025 * scale,
+      padding: applySpacing(16),
+      gap: applySpacing(20),
     },
     section: {
       backgroundColor: '#fff',
-      borderRadius: scaleSize(12),
-      padding: SCREEN_WIDTH * 0.04 * scale,
+      borderRadius: applyRadius(12),
+      padding: applySpacing(16),
       elevation: 2,
       shadowColor: '#000',
       shadowOpacity: 0.1,
@@ -198,125 +203,125 @@ export default function TabTwoScreen() {
       shadowOffset: { width: 0, height: 2 },
     },
     sectionTitle: {
-      fontSize: scaleFont(Math.max(18, SCREEN_WIDTH * 0.05)),
+      fontSize: applyFont(20),
       fontWeight: '600',
-      marginBottom: SCREEN_HEIGHT * 0.02 * scale,
+      marginBottom: applySpacing(16),
     },
     labelText: {
-      fontSize: scaleFont(Math.max(14, SCREEN_WIDTH * 0.04)),
+      fontSize: applyFont(16),
       fontWeight: '500',
       color: '#111',
     },
     hintText: {
-      fontSize: scaleFont(Math.max(10, SCREEN_WIDTH * 0.03)),
+      fontSize: applyFont(12),
       color: '#666',
-      marginTop: SCREEN_HEIGHT * 0.005 * scale,
+      marginTop: applySpacing(4),
     },
     input: {
       flex: 1,
       backgroundColor: '#F4F5F7',
-      borderRadius: scaleSize(8),
-      paddingHorizontal: SCREEN_WIDTH * 0.03 * scale,
-      paddingVertical: SCREEN_HEIGHT * 0.012 * scale,
-      fontSize: scaleFont(Math.max(14, SCREEN_WIDTH * 0.04)),
+      borderRadius: applyRadius(8),
+      paddingHorizontal: applySpacing(12),
+      paddingVertical: applySpacing(10),
+      fontSize: applyFont(16),
       color: '#111',
-      minHeight: SCREEN_HEIGHT * 0.05 * scale,
+      minHeight: applySpacing(48),
     },
     saveButton: {
       backgroundColor: '#007AFF',
-      borderRadius: scaleSize(8),
-      paddingHorizontal: SCREEN_WIDTH * 0.04 * scale,
-      paddingVertical: SCREEN_HEIGHT * 0.012 * scale,
+      borderRadius: applyRadius(8),
+      paddingHorizontal: applySpacing(16),
+      paddingVertical: applySpacing(10),
       justifyContent: 'center',
-      minHeight: SCREEN_HEIGHT * 0.05 * scale,
+      minHeight: applySpacing(44),
     },
     saveButtonText: {
       color: '#fff',
-      fontSize: scaleFont(Math.max(12, SCREEN_WIDTH * 0.035)),
+      fontSize: applyFont(14),
       fontWeight: '600',
     },
     writeButton: {
       backgroundColor: '#34C759',
-      borderRadius: scaleSize(8),
-      paddingHorizontal: SCREEN_WIDTH * 0.035 * scale,
-      paddingVertical: SCREEN_HEIGHT * 0.01 * scale,
-      minHeight: SCREEN_HEIGHT * 0.04 * scale,
+      borderRadius: applyRadius(8),
+      paddingHorizontal: applySpacing(14),
+      paddingVertical: applySpacing(8),
+      minHeight: applySpacing(40),
     },
     writeButtonText: {
       color: '#fff',
-      fontSize: scaleFont(Math.max(12, SCREEN_WIDTH * 0.035)),
+      fontSize: applyFont(14),
       fontWeight: '600',
     },
     loadButton: {
       backgroundColor: '#007AFF',
-      borderRadius: scaleSize(8),
-      paddingHorizontal: SCREEN_WIDTH * 0.04 * scale,
-      paddingVertical: SCREEN_HEIGHT * 0.01 * scale,
-      minHeight: SCREEN_HEIGHT * 0.04 * scale,
+      borderRadius: applyRadius(8),
+      paddingHorizontal: applySpacing(16),
+      paddingVertical: applySpacing(8),
+      minHeight: applySpacing(40),
     },
     loadButtonText: {
       color: '#fff',
-      fontSize: scaleFont(Math.max(12, SCREEN_WIDTH * 0.035)),
+      fontSize: applyFont(14),
       fontWeight: '600',
     },
     testButton: {
       flex: 1,
       backgroundColor: '#34C759',
-      borderRadius: scaleSize(8),
-      paddingVertical: SCREEN_HEIGHT * 0.015 * scale,
+      borderRadius: applyRadius(8),
+      paddingVertical: applySpacing(12),
       alignItems: 'center',
-      minHeight: SCREEN_HEIGHT * 0.05 * scale,
+      minHeight: applySpacing(44),
     },
     testButtonText: {
       color: '#fff',
-      fontSize: scaleFont(Math.max(12, SCREEN_WIDTH * 0.035)),
+      fontSize: applyFont(14),
       fontWeight: '600',
     },
     resetButton: {
       flex: 1,
       backgroundColor: '#FF9500',
-      borderRadius: scaleSize(8),
-      paddingVertical: SCREEN_HEIGHT * 0.015 * scale,
+      borderRadius: applyRadius(8),
+      paddingVertical: applySpacing(12),
       alignItems: 'center',
-      minHeight: SCREEN_HEIGHT * 0.05 * scale,
+      minHeight: applySpacing(44),
     },
     resetButtonText: {
       color: '#fff',
-      fontSize: scaleFont(Math.max(12, SCREEN_WIDTH * 0.035)),
+      fontSize: applyFont(14),
       fontWeight: '600',
     },
     emptyText: {
-      fontSize: scaleFont(Math.max(12, SCREEN_WIDTH * 0.035)),
+      fontSize: applyFont(13),
       color: '#666',
       textAlign: 'center',
     },
     reportCard: {
       backgroundColor: '#F9F9F9',
-      borderRadius: scaleSize(8),
-      padding: SCREEN_WIDTH * 0.03 * scale,
+      borderRadius: applyRadius(8),
+      padding: applySpacing(12),
       borderLeftWidth: 3,
       borderLeftColor: '#007AFF',
     },
     reportDate: {
-      fontSize: scaleFont(Math.max(10, SCREEN_WIDTH * 0.03)),
+      fontSize: applyFont(12),
       color: '#666',
-      marginBottom: SCREEN_HEIGHT * 0.005 * scale,
+      marginBottom: applySpacing(4),
     },
     reportDescription: {
-      fontSize: scaleFont(Math.max(13, SCREEN_WIDTH * 0.037)),
+      fontSize: applyFont(15),
       color: '#111',
-      marginBottom: SCREEN_HEIGHT * 0.007 * scale,
+      marginBottom: applySpacing(6),
       fontWeight: '500',
     },
     reportAddress: {
-      fontSize: scaleFont(Math.max(11, SCREEN_WIDTH * 0.033)),
+      fontSize: applyFont(13),
       color: '#666',
-      marginTop: SCREEN_HEIGHT * 0.005 * scale,
+      marginTop: applySpacing(4),
     },
     reportStatus: {
-      fontSize: scaleFont(Math.max(10, SCREEN_WIDTH * 0.03)),
+      fontSize: applyFont(12),
       color: '#007AFF',
-      marginTop: SCREEN_HEIGHT * 0.005 * scale,
+      marginTop: applySpacing(4),
       fontWeight: '500',
     },
     reportCardContent: {
@@ -324,16 +329,16 @@ export default function TabTwoScreen() {
     },
     deleteButton: {
       backgroundColor: '#FF3B30',
-      borderRadius: scaleSize(6),
-      paddingHorizontal: SCREEN_WIDTH * 0.03 * scale,
-      paddingVertical: SCREEN_HEIGHT * 0.008 * scale,
+      borderRadius: applyRadius(6),
+      paddingHorizontal: applySpacing(12),
+      paddingVertical: applySpacing(6),
       justifyContent: 'center',
       alignItems: 'center',
-      marginLeft: SCREEN_WIDTH * 0.02 * scale,
+      marginLeft: applySpacing(8),
     },
     deleteButtonText: {
       color: '#fff',
-      fontSize: scaleFont(Math.max(11, SCREEN_WIDTH * 0.032)),
+      fontSize: applyFont(13),
       fontWeight: '600',
     },
   };
@@ -408,10 +413,10 @@ export default function TabTwoScreen() {
               현재: {(tempScale * 100).toFixed(0)}% (최소: {(MIN_SCALE * 100).toFixed(0)}%, 최대: {(MAX_SCALE * 100).toFixed(0)}%)
             </Text>
           </View>
-          <View style={{ marginVertical: scaleSpacing(16) }}>
+          <View style={{ marginVertical: applySpacing(16) }}>
             <CustomSlider
               width="100%"
-              height={scaleSize(40)}
+              height={applySpacing(40)}
               minimumValue={MIN_SCALE}
               maximumValue={MAX_SCALE}
               value={tempScale}
