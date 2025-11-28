@@ -18,6 +18,7 @@ import { createReport } from '../../api/reportService';
 import { useDevice } from '../../contexts/DeviceContext';
 import { useRoute } from '../../contexts/RouteContext';
 import { useUIScale } from '../../contexts/UIScaleContext';
+import { useVoiceSettings } from '../../contexts/VoiceSettingsContext';
 import { useLocation } from '../../hooks/useLocation';
 import { useVoiceInput } from '../../hooks/useVoiceInput';
 import { useVoiceOutput } from '../../hooks/useVoiceOutput';
@@ -27,7 +28,8 @@ export default function VoiceCommandButton() {
   const { deviceId } = useDevice();
   const { location } = useLocation();
   const { loadRoute, clearRoute, guidanceSteps, currentStepIndex } = useRoute();
-  const { scale, scaleFont, scaleSize, scaleSpacing } = useUIScale();
+  const { scale, scaleFont, scaleSize, scaleSpacing, updateScale, resetToDefault, MIN_SCALE, MAX_SCALE, DEFAULT_SCALE, isLoading: isUIScaleLoading } = useUIScale();
+  const { rate, pitch, updateRate, updatePitch, resetToDefaults, isLoading: isVoiceSettingsLoading } = useVoiceSettings();
   const { speak, stop } = useVoiceOutput();
 
   const [systemMessage, setSystemMessage] = useState('목적지를 검색하거나 하단 안내판을 두 번 탭해 말씀해주세요.');
@@ -237,21 +239,45 @@ export default function VoiceCommandButton() {
 
   const handleNluRequest = async (text) => {
     setSystemMessage(`음성 명령 분석 중: ${text}`);
-    if (!location) {
-      setSystemMessage('현재 위치를 먼저 파악해야 합니다.');
-      return;
-    }
-    if (!deviceId) {
-      setSystemMessage('기기 ID를 로드 중입니다. 잠시 후 시도하세요.');
-      return;
-    }
-
     setIsLoading(true);
+    
     try {
       const response = await parseCommand(text);
-      const nluResult = response.data.result;
+      console.log('[NLU Full Response]', JSON.stringify(response.data, null, 2));
+      console.log('[NLU Response.data.result type]', typeof response.data.result);
+      console.log('[NLU Response.data.result]', response.data.result);
+      
+      // 백엔드 응답 구조에 따라 result가 객체이거나 문자열일 수 있음
+      let nluResult;
+      if (typeof response.data.result === 'string') {
+        // 문자열인 경우 JSON 파싱
+        try {
+          nluResult = JSON.parse(response.data.result);
+        } catch (e) {
+          console.error('Failed to parse result as JSON:', e);
+          nluResult = response.data.result;
+        }
+      } else {
+        nluResult = response.data.result;
+      }
+      
+      // controlAction을 여러 경로에서 찾기 시도
+      const controlAction = nluResult?.controlAction || response.data?.controlAction || response.data?.result?.controlAction;
+      
+      console.log('[NLU Result parsed]', JSON.stringify(nluResult, null, 2));
+      console.log('[Control Action found]', controlAction);
 
       if (nluResult.intent === 'SEARCH_ROUTE') {
+        if (!location) {
+          setSystemMessage('현재 위치를 먼저 파악해야 합니다.');
+          speak('현재 위치를 먼저 파악해야 합니다.');
+          return;
+        }
+        if (!deviceId) {
+          setSystemMessage('기기 ID를 로드 중입니다. 잠시 후 시도하세요.');
+          speak('기기 ID를 로드 중입니다. 잠시 후 시도하세요.');
+          return;
+        }
         await requestRouteForDestination(nluResult.destination);
       } else if (nluResult.intent === 'REPORT_SMOKING') {
         // 신고 생성
@@ -285,12 +311,160 @@ export default function VoiceCommandButton() {
           setSystemMessage('신고 접수 중 오류가 발생했습니다: ' + reportError.message);
           speak('신고 접수 중 오류가 발생했습니다.');
         }
+      } else if (nluResult.intent === 'VOICE_SPEED_CONTROL') {
+        // 보이스 속도 제어
+        const STEP = 0.1;
+        const MIN_RATE = 0.1;
+        const MAX_RATE = 2.0;
+        const DEFAULT_RATE_VALUE = 0.9;
+        
+        // 현재 rate 값이 로드되지 않았거나 유효하지 않은 경우 기본값 사용
+        const currentRate = (rate !== undefined && rate !== null && typeof rate === 'number' && !isNaN(rate)) ? rate : DEFAULT_RATE_VALUE;
+        console.log('[VOICE_SPEED_CONTROL] currentRate:', currentRate, 'controlAction:', controlAction);
+        
+        let newRate = currentRate;
+        let message = '';
+
+        if (controlAction === '상승') {
+          if (currentRate >= MAX_RATE) {
+            message = '음성 속도가 이미 최대값입니다.';
+            newRate = currentRate;
+          } else {
+            newRate = Math.min(MAX_RATE, currentRate + STEP);
+            message = `음성 속도를 올렸습니다. 현재 속도: ${newRate.toFixed(1)}`;
+          }
+        } else if (controlAction === '하락') {
+          if (currentRate <= MIN_RATE) {
+            message = '음성 속도가 이미 최소값입니다.';
+            newRate = currentRate;
+          } else {
+            newRate = Math.max(MIN_RATE, currentRate - STEP);
+            message = `음성 속도를 내렸습니다. 현재 속도: ${newRate.toFixed(1)}`;
+          }
+        } else if (controlAction === '초기화') {
+          newRate = DEFAULT_RATE_VALUE;
+          message = '음성 속도가 기본값으로 초기화되었습니다.';
+        } else {
+          message = '보이스 속도 제어 명령을 인식하지 못했습니다.';
+          console.warn('[VOICE_SPEED_CONTROL] Unknown controlAction:', controlAction);
+        }
+
+        console.log('[VOICE_SPEED_CONTROL] newRate:', newRate, 'difference:', Math.abs(newRate - currentRate));
+
+        // 값이 변경되었거나 초기화인 경우 업데이트
+        if (Math.abs(newRate - currentRate) > 0.01 || controlAction === '초기화') {
+          await updateRate(newRate);
+          setSystemMessage(message);
+          speak(message);
+        } else {
+          setSystemMessage(message);
+          speak(message);
+        }
+      } else if (nluResult.intent === 'VOICE_TONE_CONTROL') {
+        // 보이스 톤(음높이) 제어
+        const STEP = 0.1;
+        const MIN_PITCH = 0.1;
+        const MAX_PITCH = 2.0;
+        const DEFAULT_PITCH_VALUE = 1.0;
+        
+        // 현재 pitch 값이 로드되지 않았거나 유효하지 않은 경우 기본값 사용
+        const currentPitch = (pitch !== undefined && pitch !== null && typeof pitch === 'number' && !isNaN(pitch)) ? pitch : DEFAULT_PITCH_VALUE;
+        console.log('[VOICE_TONE_CONTROL] currentPitch:', currentPitch, 'controlAction:', controlAction);
+        
+        let newPitch = currentPitch;
+        let message = '';
+
+        if (controlAction === '상승') {
+          if (currentPitch >= MAX_PITCH) {
+            message = '음높이가 이미 최대값입니다.';
+            newPitch = currentPitch;
+          } else {
+            newPitch = Math.min(MAX_PITCH, currentPitch + STEP);
+            message = `음높이를 올렸습니다. 현재 음높이: ${newPitch.toFixed(1)}`;
+          }
+        } else if (controlAction === '하락') {
+          if (currentPitch <= MIN_PITCH) {
+            message = '음높이가 이미 최소값입니다.';
+            newPitch = currentPitch;
+          } else {
+            newPitch = Math.max(MIN_PITCH, currentPitch - STEP);
+            message = `음높이를 내렸습니다. 현재 음높이: ${newPitch.toFixed(1)}`;
+          }
+        } else if (controlAction === '초기화') {
+          newPitch = DEFAULT_PITCH_VALUE;
+          message = '음높이가 기본값으로 초기화되었습니다.';
+        } else {
+          message = '보이스 톤 제어 명령을 인식하지 못했습니다.';
+          console.warn('[VOICE_TONE_CONTROL] Unknown controlAction:', controlAction);
+        }
+
+        console.log('[VOICE_TONE_CONTROL] newPitch:', newPitch, 'difference:', Math.abs(newPitch - currentPitch));
+
+        // 값이 변경되었거나 초기화인 경우 업데이트
+        if (Math.abs(newPitch - currentPitch) > 0.01 || controlAction === '초기화') {
+          await updatePitch(newPitch);
+          setSystemMessage(message);
+          speak(message);
+        } else {
+          setSystemMessage(message);
+          speak(message);
+        }
+      } else if (nluResult.intent === 'UI_SIZE_CONTROL') {
+        // UI 크기 제어
+        const STEP = 0.1;
+        const MIN_SCALE_VALUE = MIN_SCALE || 0.8;
+        const MAX_SCALE_VALUE = MAX_SCALE || 2.0;
+        const DEFAULT_SCALE_VALUE = DEFAULT_SCALE || 1.0;
+        
+        // 현재 scale 값이 로드되지 않았거나 유효하지 않은 경우 기본값 사용
+        const currentScale = (scale !== undefined && scale !== null && typeof scale === 'number' && !isNaN(scale)) ? scale : DEFAULT_SCALE_VALUE;
+        console.log('[UI_SIZE_CONTROL] currentScale:', currentScale, 'controlAction:', controlAction);
+        
+        let newScale = currentScale;
+        let message = '';
+
+        if (controlAction === '상승') {
+          if (currentScale >= MAX_SCALE_VALUE) {
+            message = 'UI 크기가 이미 최대값입니다.';
+            newScale = currentScale;
+          } else {
+            newScale = Math.min(MAX_SCALE_VALUE, currentScale + STEP);
+            message = `UI 크기를 키웠습니다. 현재 크기: ${(newScale * 100).toFixed(0)}%`;
+          }
+        } else if (controlAction === '하락') {
+          if (currentScale <= MIN_SCALE_VALUE) {
+            message = 'UI 크기가 이미 최소값입니다.';
+            newScale = currentScale;
+          } else {
+            newScale = Math.max(MIN_SCALE_VALUE, currentScale - STEP);
+            message = `UI 크기를 줄였습니다. 현재 크기: ${(newScale * 100).toFixed(0)}%`;
+          }
+        } else if (controlAction === '초기화') {
+          newScale = DEFAULT_SCALE_VALUE;
+          message = 'UI 크기가 기본값으로 초기화되었습니다.';
+        } else {
+          message = 'UI 크기 제어 명령을 인식하지 못했습니다.';
+          console.warn('[UI_SIZE_CONTROL] Unknown controlAction:', controlAction);
+        }
+
+        console.log('[UI_SIZE_CONTROL] newScale:', newScale, 'difference:', Math.abs(newScale - currentScale));
+
+        // 값이 변경되었거나 초기화인 경우 업데이트
+        if (Math.abs(newScale - currentScale) > 0.01 || controlAction === '초기화') {
+          await updateScale(newScale);
+          setSystemMessage(message);
+          speak(message);
+        } else {
+          setSystemMessage(message);
+          speak(message);
+        }
       } else {
         setSystemMessage('명령을 이해하지 못했습니다.');
         speak('명령을 이해하지 못했습니다.');
       }
     } catch (e) {
       setSystemMessage('오류 발생: ' + e.message);
+      speak('명령 처리 중 오류가 발생했습니다.');
     } finally {
       setIsLoading(false);
     }
