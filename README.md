@@ -1,11 +1,8 @@
 # 구성원 기여 내역 명시
 송상준: 프론트 (UI 설계 및 구현)<br>
 안태경: 프론트 (API 연결)
-
-
-
-
-
+<br>
+<br>
 
 # Welcome to your Expo app 👋
 
